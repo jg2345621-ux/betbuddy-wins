@@ -14,7 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bankroll_settings: {
+        Row: {
+          created_at: string
+          initial_bankroll: number
+          stop_loss_pct: number
+          stop_win_pct: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          initial_bankroll?: number
+          stop_loss_pct?: number
+          stop_win_pct?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          initial_bankroll?: number
+          stop_loss_pct?: number
+          stop_win_pct?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      bets: {
+        Row: {
+          created_at: string
+          event: string
+          id: string
+          odds: number
+          result: string
+          stake: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event?: string
+          id?: string
+          odds: number
+          result: string
+          stake: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          id?: string
+          odds?: number
+          result?: string
+          stake?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
