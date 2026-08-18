@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
 export type BetResult = "won" | "lost" | "void";
 
@@ -103,57 +105,239 @@ export function computeMetrics(state: State): Metrics {
   };
 }
 
+/** Riesgo proyectado de una apuesta antes de registrarla. */
+export function projectRisk(
+  state: State,
+  bet: { stake: number; odds: number; result: BetResult },
+): { lossUsedPct: number; wouldLock: boolean } {
+  const next: State = {
+    ...state,
+    bets: [
+      { ...bet, id: "preview", event: "", createdAt: new Date().toISOString() },
+      ...state.bets,
+    ],
+  };
+  const m = computeMetrics(next);
+  return { lossUsedPct: m.lossUsedPct, wouldLock: m.lockReason === "loss" };
+}
+
+/** Peor escenario: la apuesta se pierde. */
+export function projectWorstCase(state: State, stake: number) {
+  return projectRisk(state, { stake, odds: 1, result: "lost" });
+}
+
+function readLocal(): State {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return DEFAULT_STATE;
+    const parsed = JSON.parse(raw) as State;
+    return {
+      settings: { ...DEFAULT_STATE.settings, ...parsed.settings },
+      bets: Array.isArray(parsed.bets) ? parsed.bets : [],
+    };
+  } catch {
+    return DEFAULT_STATE;
+  }
+}
+
+function writeLocal(state: State) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(state));
+  } catch {
+    /* almacenamiento no disponible */
+  }
+}
+
+type Row = {
+  id: string;
+  event: string;
+  stake: number | string;
+  odds: number | string;
+  result: string;
+  created_at: string;
+};
+
+function rowToBet(r: Row): Bet {
+  return {
+    id: r.id,
+    event: r.event ?? "",
+    stake: Number(r.stake),
+    odds: Number(r.odds),
+    result: r.result as BetResult,
+    createdAt: r.created_at,
+  };
+}
+
 export function useBankroll() {
   const [state, setState] = useState<State>(DEFAULT_STATE);
   const [hydrated, setHydrated] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
+  const cloud = !!session;
+  const userId = session?.user.id ?? null;
+
+  // Sesión de la nube
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as State;
-        setState({
-          settings: { ...DEFAULT_STATE.settings, ...parsed.settings },
-          bets: Array.isArray(parsed.bets) ? parsed.bets : [],
-        });
-      }
-    } catch {
-      /* ignore corrupt storage */
-    }
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  // Carga inicial local (siempre disponible aunque no haya sesión)
+  useEffect(() => {
+    setState(readLocal());
     setHydrated(true);
   }, []);
 
+  // Carga / migración desde la nube
+  useEffect(() => {
+    if (!userId || !hydrated) return;
+    let cancelled = false;
+    (async () => {
+      setSyncing(true);
+      const [{ data: settingsRow }, { data: betRows }] = await Promise.all([
+        supabase.from("bankroll_settings").select("*").eq("user_id", userId).maybeSingle(),
+        supabase.from("bets").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+      ]);
+      if (cancelled) return;
+
+      const local = stateRef.current;
+      let settings: Settings = settingsRow
+        ? {
+            initialBankroll: Number(settingsRow.initial_bankroll),
+            stopLossPct: Number(settingsRow.stop_loss_pct),
+            stopWinPct: Number(settingsRow.stop_win_pct),
+          }
+        : local.settings;
+
+      let bets: Bet[] = (betRows ?? []).map((r) => rowToBet(r as Row));
+
+      if (!settingsRow) {
+        await supabase.from("bankroll_settings").upsert({
+          user_id: userId,
+          initial_bankroll: settings.initialBankroll,
+          stop_loss_pct: settings.stopLossPct,
+          stop_win_pct: settings.stopWinPct,
+        });
+      }
+
+      // Primera sincronización: sube las apuestas locales
+      if (bets.length === 0 && local.bets.length > 0) {
+        const { data: inserted } = await supabase
+          .from("bets")
+          .insert(
+            local.bets.map((b) => ({
+              user_id: userId,
+              event: b.event,
+              stake: b.stake,
+              odds: b.odds,
+              result: b.result,
+              created_at: b.createdAt,
+            })),
+          )
+          .select();
+        if (inserted) bets = inserted.map((r) => rowToBet(r as Row));
+      }
+
+      if (!cancelled) {
+        setState({ settings, bets });
+        setSyncing(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, hydrated]);
+
+  // Respaldo local siempre activo (sobrevive a refrescos, incluso con sesión)
   useEffect(() => {
     if (!hydrated) return;
-    localStorage.setItem(KEY, JSON.stringify(state));
+    writeLocal(state);
   }, [state, hydrated]);
 
-  const addBet = useCallback((bet: Omit<Bet, "id" | "createdAt">) => {
-    setState((s) => ({
-      ...s,
-      bets: [
-        { ...bet, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
-        ...s.bets,
-      ],
-    }));
-  }, []);
+  const addBet = useCallback(
+    (bet: Omit<Bet, "id" | "createdAt">) => {
+      const local: Bet = { ...bet, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+      setState((s) => ({ ...s, bets: [local, ...s.bets] }));
+      if (userId) {
+        void supabase.from("bets").insert({
+          id: local.id,
+          user_id: userId,
+          event: local.event,
+          stake: local.stake,
+          odds: local.odds,
+          result: local.result,
+          created_at: local.createdAt,
+        });
+      }
+    },
+    [userId],
+  );
 
-  const removeBet = useCallback((id: string) => {
-    setState((s) => ({ ...s, bets: s.bets.filter((b) => b.id !== id) }));
-  }, []);
+  const removeBet = useCallback(
+    (id: string) => {
+      setState((s) => ({ ...s, bets: s.bets.filter((b) => b.id !== id) }));
+      if (userId) void supabase.from("bets").delete().eq("id", id).eq("user_id", userId);
+    },
+    [userId],
+  );
 
-  const updateSettings = useCallback((patch: Partial<Settings>) => {
-    setState((s) => ({ ...s, settings: { ...s.settings, ...patch } }));
-  }, []);
+  const updateSettings = useCallback(
+    (patch: Partial<Settings>) => {
+      setState((s) => {
+        const settings = { ...s.settings, ...patch };
+        if (userId) {
+          void supabase.from("bankroll_settings").upsert({
+            user_id: userId,
+            initial_bankroll: settings.initialBankroll,
+            stop_loss_pct: settings.stopLossPct,
+            stop_win_pct: settings.stopWinPct,
+          });
+        }
+        return { ...s, settings };
+      });
+    },
+    [userId],
+  );
 
   const resetSession = useCallback(() => {
-    setState((s) => ({
-      settings: { ...s.settings, initialBankroll: Math.max(0, computeMetrics(s).bankroll) },
-      bets: [],
-    }));
+    setState((s) => {
+      const settings = {
+        ...s.settings,
+        initialBankroll: Math.max(0, computeMetrics(s).bankroll),
+      };
+      if (userId) {
+        void supabase.from("bets").delete().eq("user_id", userId);
+        void supabase.from("bankroll_settings").upsert({
+          user_id: userId,
+          initial_bankroll: settings.initialBankroll,
+          stop_loss_pct: settings.stopLossPct,
+          stop_win_pct: settings.stopWinPct,
+        });
+      }
+      return { settings, bets: [] };
+    });
+  }, [userId]);
+
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
   }, []);
 
-  return { state, hydrated, addBet, removeBet, updateSettings, resetSession };
+  return {
+    state,
+    hydrated,
+    cloud,
+    syncing,
+    email: session?.user.email ?? null,
+    addBet,
+    removeBet,
+    updateSettings,
+    resetSession,
+    signOut,
+  };
 }
 
 export const money = (n: number) =>
