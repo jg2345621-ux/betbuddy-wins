@@ -61,7 +61,7 @@ function Dashboard() {
 
       {m.locked && <LockBanner reason={m.lockReason!} />}
 
-      <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Stat
           label="Bankroll actual"
           value={money(m.bankroll)}
@@ -75,12 +75,12 @@ function Dashboard() {
           tone={m.profit > 0 ? "up" : m.profit < 0 ? "down" : "flat"}
           icon={m.profit < 0 ? <TrendingDown className="size-4" /> : <TrendingUp className="size-4" />}
         />
-      <Stat
-        label="Acierto"
-        value={`${m.winRate.toFixed(0)}%`}
-        hint={`${m.wins}G · ${m.losses}P · ${m.settled} resueltas`}
-        icon={<Trophy className="size-4" />}
-      />
+        <Stat
+          label="Acierto"
+          value={`${m.winRate.toFixed(0)}%`}
+          hint={`${m.wins}G · ${m.losses}P · ${m.settled} resueltas`}
+          icon={<Trophy className="size-4" />}
+        />
       </section>
 
       <section className="mt-4 grid gap-4 lg:grid-cols-3">
