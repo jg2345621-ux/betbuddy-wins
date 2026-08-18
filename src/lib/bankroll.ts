@@ -15,7 +15,6 @@ export type Settings = {
   initialBankroll: number;
   stopLossPct: number;
   stopWinPct: number;
-  stakePct: number;
 };
 
 export type State = {
@@ -28,12 +27,11 @@ export const DEFAULT_STATE: State = {
     initialBankroll: 1000,
     stopLossPct: 10,
     stopWinPct: 20,
-    stakePct: 2,
   },
   bets: [],
 };
 
-const KEY = "winroll.state.v1";
+const KEY = "betroll.state.v1";
 
 export function profitOf(bet: Bet): number {
   if (bet.result === "won") return bet.stake * (bet.odds - 1);
@@ -59,7 +57,6 @@ export type Metrics = {
   winLimit: number;
   lossUsedPct: number;
   winUsedPct: number;
-  suggestedStake: number;
   locked: boolean;
   lockReason: "loss" | "win" | null;
   settled: number;
@@ -71,7 +68,7 @@ export type Metrics = {
 };
 
 export function computeMetrics(state: State): Metrics {
-  const { initialBankroll, stopLossPct, stopWinPct, stakePct } = state.settings;
+  const { initialBankroll, stopLossPct, stopWinPct } = state.settings;
   const bets = state.bets;
   const profit = bets.reduce((acc, b) => acc + profitOf(b), 0);
   const bankroll = initialBankroll + profit;
@@ -95,7 +92,6 @@ export function computeMetrics(state: State): Metrics {
     winLimit,
     lossUsedPct,
     winUsedPct,
-    suggestedStake: (bankroll * stakePct) / 100,
     locked: lockReason !== null,
     lockReason,
     settled: settledBets.length,

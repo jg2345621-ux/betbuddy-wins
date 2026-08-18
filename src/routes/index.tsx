@@ -34,13 +34,13 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "WinRoll — Gestor de bankroll con stop-loss y stop-win" },
+      { title: "BetRoll — Gestor de bankroll con stop-loss y stop-win" },
       {
         name: "description",
         content:
-          "Controla tu bankroll de apuestas con límites de pérdida y ganancia en porcentaje, stake sugerido y estadísticas en tiempo real.",
+          "Controla tu bankroll de apuestas con límites de pérdida y ganancia en porcentaje y estadísticas en tiempo real.",
       },
-      { property: "og:title", content: "WinRoll — Gestor de bankroll de apuestas" },
+      { property: "og:title", content: "BetRoll — Gestor de bankroll de apuestas" },
       {
         property: "og:description",
         content:
@@ -75,18 +75,12 @@ function Dashboard() {
           tone={m.profit > 0 ? "up" : m.profit < 0 ? "down" : "flat"}
           icon={m.profit < 0 ? <TrendingDown className="size-4" /> : <TrendingUp className="size-4" />}
         />
-        <Stat
-          label="Acierto"
-          value={`${m.winRate.toFixed(0)}%`}
-          hint={`${m.wins}G · ${m.losses}P · ${m.settled} resueltas`}
-          icon={<Trophy className="size-4" />}
-        />
-        <Stat
-          label="Stake sugerido"
-          value={money(m.suggestedStake)}
-          hint={`${state.settings.stakePct}% del bankroll`}
-          icon={<Calculator className="size-4" />}
-        />
+      <Stat
+        label="Acierto"
+        value={`${m.winRate.toFixed(0)}%`}
+        hint={`${m.wins}G · ${m.losses}P · ${m.settled} resueltas`}
+        icon={<Trophy className="size-4" />}
+      />
       </section>
 
       <section className="mt-4 grid gap-4 lg:grid-cols-3">
@@ -117,7 +111,7 @@ function Dashboard() {
       </section>
 
       <section className="mt-4 grid gap-4 lg:grid-cols-3">
-        <BetForm locked={m.locked} suggested={m.suggestedStake} onAdd={addBet} />
+        <BetForm locked={m.locked} onAdd={addBet} />
         <div className="surface p-5 lg:col-span-2">
           <h2 className="flex items-center gap-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
             <BarChart3 className="size-4 text-primary" /> Historial
@@ -184,10 +178,10 @@ function Header({ onReset }: { onReset: () => void }) {
         </span>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            WIN<span className="gold-text">ROLL</span>
+            BET<span className="gold-text">ROLL</span>
           </h1>
           <p className="text-xs text-muted-foreground">
-            Gestiona tu bankroll con inteligencia y precisión
+            Gestiona tu bankroll de apuestas con inteligencia y precisión
           </p>
         </div>
       </div>
@@ -381,13 +375,6 @@ function SettingsCard({
           max={100}
           onChange={(v) => onChange({ stopWinPct: v })}
         />
-        <Slider
-          label="Stake por apuesta (%)"
-          value={settings.stakePct}
-          max={10}
-          step={0.5}
-          onChange={(v) => onChange({ stakePct: v })}
-        />
       </div>
     </div>
   );
@@ -427,11 +414,9 @@ function Slider({
 
 function BetForm({
   locked,
-  suggested,
   onAdd,
 }: {
   locked: boolean;
-  suggested: number;
   onAdd: (bet: { event: string; stake: number; odds: number; result: BetResult }) => void;
 }) {
   const [event, setEvent] = useState("");
@@ -442,7 +427,7 @@ function BetForm({
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (locked) return;
-    const s = Number(stake || suggested);
+    const s = Number(stake);
     const o = Number(odds);
     if (!s || !o) return;
     onAdd({ event: event.trim(), stake: s, odds: o, result });
@@ -467,7 +452,7 @@ function BetForm({
             className="field"
             type="number"
             step="0.01"
-            placeholder={suggested.toFixed(2)}
+            placeholder="Stake"
             value={stake}
             onChange={(e) => setStake(e.target.value)}
           />
