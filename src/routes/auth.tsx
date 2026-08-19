@@ -4,7 +4,6 @@ import { Loader2, Mail, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -68,16 +67,6 @@ function AuthPage() {
     }
   };
 
-  const google = async () => {
-    try {
-      await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    } catch (err) {
-      toast.error("No se pudo entrar con Google", {
-        description: err instanceof Error ? err.message : "Intenta de nuevo.",
-      });
-    }
-  };
-
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-4 py-10">
       <div className="mb-6 flex items-center gap-3">
@@ -95,19 +84,6 @@ function AuthPage() {
       </div>
 
       <div className="surface p-6">
-        <button
-          type="button"
-          onClick={google}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-4 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
-        >
-          Continuar con Google
-        </button>
-
-        <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="h-px flex-1 bg-border" /> o con tu correo
-          <span className="h-px flex-1 bg-border" />
-        </div>
-
         <form onSubmit={submit} className="space-y-4">
           <label className="block">
             <span className="text-sm text-muted-foreground">Correo</span>
