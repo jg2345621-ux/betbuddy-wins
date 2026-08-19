@@ -1,10 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   AlertTriangle,
   BarChart3,
   Calculator,
+  Cloud,
+  CloudOff,
+  Loader2,
+  LogOut,
   Lock,
   Plus,
   RotateCcw,
@@ -23,13 +27,27 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   computeMetrics,
   money,
   profitOf,
+  projectWorstCase,
   useBankroll,
   type BetResult,
 } from "@/lib/bankroll";
+
+type PendingBet = { event: string; stake: number; odds: number; result: BetResult };
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -52,12 +70,67 @@ export const Route = createFileRoute("/")({
 });
 
 function Dashboard() {
-  const { state, hydrated, addBet, removeBet, updateSettings, resetSession } = useBankroll();
+  const {
+    state,
+    hydrated,
+    cloud,
+    syncing,
+    email,
+    addBet,
+    removeBet,
+    updateSettings,
+    resetSession,
+    signOut,
+  } = useBankroll();
   const m = useMemo(() => computeMetrics(state), [state]);
+  const [pending, setPending] = useState<PendingBet | null>(null);
+  const notified = useRef(0);
+
+  // Avisos automáticos al 50% y 80% del stop-loss
+  useEffect(() => {
+    if (!hydrated) return;
+    const used = m.lossUsedPct;
+    if (used < 50) {
+      notified.current = 0;
+      return;
+    }
+    if (m.locked) return;
+    const level = used >= 80 ? 80 : 50;
+    if (notified.current >= level) return;
+    notified.current = level;
+    const restante = Math.max(0, m.lossLimit + m.profit);
+    if (level === 80) {
+      toast.error("Estás al 80% de tu stop-loss", {
+        description: `Solo te quedan ${money(restante)} antes de alcanzar el límite de pérdida.`,
+      });
+    } else {
+      toast.warning("Vas al 50% de tu stop-loss", {
+        description: `Te quedan ${money(restante)} de margen en esta sesión.`,
+      });
+    }
+  }, [m.lossUsedPct, m.locked, m.lossLimit, m.profit, hydrated]);
+
+  const requestAdd = (bet: PendingBet) => {
+    if (m.locked) return;
+    const risk = projectWorstCase(state, bet.stake);
+    if (risk.wouldLock || risk.lossUsedPct >= 80) {
+      setPending(bet);
+      return;
+    }
+    addBet(bet);
+  };
+
+  const worst = pending ? projectWorstCase(state, pending.stake) : null;
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 md:px-8">
-      <Header onReset={resetSession} />
+      <Header
+        onReset={resetSession}
+        cloud={cloud}
+        syncing={syncing}
+        email={email}
+        onSignOut={signOut}
+      />
 
       {m.locked && <LockBanner reason={m.lockReason!} />}
 
@@ -111,7 +184,7 @@ function Dashboard() {
       </section>
 
       <section className="mt-4 grid gap-4 lg:grid-cols-3">
-        <BetForm locked={m.locked} onAdd={addBet} />
+        <BetForm locked={m.locked} onAdd={requestAdd} />
         <div className="surface p-5 lg:col-span-2">
           <h2 className="flex items-center gap-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
             <BarChart3 className="size-4 text-primary" /> Historial
@@ -163,13 +236,58 @@ function Dashboard() {
       </section>
 
       <p className="mt-8 text-center text-xs text-muted-foreground">
-        Juega con responsabilidad. Los datos se guardan solo en este navegador.
+        Juega con responsabilidad.{" "}
+        {cloud
+          ? "Tus datos se guardan en tu cuenta y en este navegador."
+          : "Tus datos se guardan en este navegador; inicia sesión para conservarlos en la nube."}
       </p>
+
+      <AlertDialog open={pending !== null} onOpenChange={(o) => !o && setPending(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {worst?.wouldLock ? "Esta apuesta puede cerrar tu sesión" : "Te acercas a tu stop-loss"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pending
+                ? `Si pierdes ${money(pending.stake)} llegarías al ${worst?.lossUsedPct.toFixed(0)}% de tu límite de pérdida (${money(m.lossLimit)}). ${
+                    worst?.wouldLock
+                      ? "Se bloquearán las nuevas apuestas de esta sesión."
+                      : "Considera reducir el importe."
+                  }`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pending) addBet(pending);
+                setPending(null);
+              }}
+            >
+              Registrar de todos modos
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }
 
-function Header({ onReset }: { onReset: () => void }) {
+function Header({
+  onReset,
+  cloud,
+  syncing,
+  email,
+  onSignOut,
+}: {
+  onReset: () => void;
+  cloud: boolean;
+  syncing: boolean;
+  email: string | null;
+  onSignOut: () => void;
+}) {
   return (
     <header className="flex flex-wrap items-center justify-between gap-4">
       <div className="flex items-center gap-3">
@@ -185,12 +303,42 @@ function Header({ onReset }: { onReset: () => void }) {
           </p>
         </div>
       </div>
-      <button
-        onClick={onReset}
-        className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
-      >
-        <RotateCcw className="size-4" /> Nueva sesión
-      </button>
+      <div className="flex flex-wrap items-center gap-2">
+        {cloud ? (
+          <>
+            <span
+              title={email ?? undefined}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2 text-xs font-medium text-muted-foreground"
+            >
+              {syncing ? (
+                <Loader2 className="size-4 animate-spin text-primary" />
+              ) : (
+                <Cloud className="size-4 text-success" />
+              )}
+              <span className="max-w-[9rem] truncate">{email ?? "Sincronizado"}</span>
+            </span>
+            <button
+              onClick={onSignOut}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
+            >
+              <LogOut className="size-4" /> Salir
+            </button>
+          </>
+        ) : (
+          <Link
+            to="/auth"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
+          >
+            <CloudOff className="size-4" /> Guardar en la nube
+          </Link>
+        )}
+        <button
+          onClick={onReset}
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
+        >
+          <RotateCcw className="size-4" /> Nueva sesión
+        </button>
+      </div>
     </header>
   );
 }
