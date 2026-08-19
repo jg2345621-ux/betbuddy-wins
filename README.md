@@ -1,14 +1,22 @@
-# Welcome to your Lovable project
+# Bet Safely
+
+Https://winroll.online/dashboard
+
+Quiero crear un sistema igual con limite de perdida y limite de ganancias, pero para apuesta como debería hacerla?
+
+Que sea muy similar a la del link
 
 This project was built with [Lovable](https://lovable.dev).
 
+**Live app**: https://betbuddy-wins.lovable.app
+
 ## Build with Lovable
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/9da0e25a-4a26-471f-82d0-74301ad99181).
 
 - **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
 ## Development
 
@@ -20,10 +28,3 @@ cd <repository-name>
 npm i
 npm run dev
 ```
-
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
