@@ -560,17 +560,84 @@ function Slider({
   );
 }
 
+export type Prefill = { event: string; odds: number; stake: number; n: number };
+
+const COMMUNITY_PICKS = [
+  { event: "Real Madrid vs Barcelona", pick: "Ambos anotan", odds: 1.72 },
+  { event: "Man City vs Arsenal", pick: "Más de 2.5 goles", odds: 1.85 },
+  { event: "Lakers vs Celtics", pick: "Lakers +4.5", odds: 1.9 },
+  { event: "Boca vs River", pick: "Doble oportunidad 1X", odds: 1.55 },
+  { event: "América vs Chivas", pick: "América gana", odds: 2.1 },
+  { event: "Djokovic vs Alcaraz", pick: "Alcaraz gana", odds: 2.35 },
+];
+
+function CommunityPicks({
+  suggestedStake,
+  locked,
+  onPick,
+}: {
+  suggestedStake: number;
+  locked: boolean;
+  onPick: (p: { event: string; odds: number; stake: number }) => void;
+}) {
+  return (
+    <div className="surface p-5 lg:col-span-3">
+      <h2 className="flex items-center gap-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+        <Users className="size-4 text-primary" /> Picks de la Comunidad
+      </h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Toca un pick y se llena tu formulario. Solo ajusta el monto y marca el resultado.
+      </p>
+      <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {COMMUNITY_PICKS.map((p) => (
+          <li
+            key={p.event}
+            className="flex flex-col gap-3 rounded-xl border border-border bg-secondary/40 p-4"
+          >
+            <div>
+              <p className="truncate text-sm font-semibold">{p.event}</p>
+              <p className="text-xs text-muted-foreground">{p.pick}</p>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="rounded-lg bg-primary/15 px-2 py-1 text-xs font-bold text-primary">
+                Cuota {p.odds.toFixed(2)}
+              </span>
+              <button
+                type="button"
+                disabled={locked}
+                onClick={() => onPick({ event: `${p.event} — ${p.pick}`, odds: p.odds, stake: suggestedStake })}
+                className="gold-btn flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Plus className="size-3.5" /> Agregar
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function BetForm({
   locked,
   onAdd,
+  prefill,
 }: {
   locked: boolean;
   onAdd: (bet: { event: string; stake: number; odds: number; result: BetResult }) => void;
+  prefill: Prefill | null;
 }) {
   const [event, setEvent] = useState("");
   const [stake, setStake] = useState("");
   const [odds, setOdds] = useState("1.90");
   const [result, setResult] = useState<BetResult>("won");
+
+  useEffect(() => {
+    if (!prefill) return;
+    setEvent(prefill.event);
+    setOdds(String(prefill.odds));
+    setStake(prefill.stake > 0 ? String(prefill.stake) : "");
+  }, [prefill]);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -582,6 +649,7 @@ function BetForm({
     setEvent("");
     setStake("");
   };
+
 
   return (
     <form onSubmit={submit} className="surface p-5">
