@@ -17,6 +17,7 @@ import {
   TrendingDown,
   TrendingUp,
   Trophy,
+  Users,
 } from "lucide-react";
 import {
   Area,
@@ -84,6 +85,7 @@ function Dashboard() {
   } = useBankroll();
   const m = useMemo(() => computeMetrics(state), [state]);
   const [pending, setPending] = useState<PendingBet | null>(null);
+  const [prefill, setPrefill] = useState<Prefill | null>(null);
   const notified = useRef(0);
 
   // Avisos automáticos al 50% y 80% del stop-loss
