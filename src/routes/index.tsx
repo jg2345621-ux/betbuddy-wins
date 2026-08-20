@@ -184,7 +184,19 @@ function Dashboard() {
       </section>
 
       <section className="mt-4 grid gap-4 lg:grid-cols-3">
-        <BetForm locked={m.locked} onAdd={requestAdd} />
+        <CommunityPicks
+          suggestedStake={Math.max(1, Math.round(m.bankroll * 0.02))}
+          locked={m.locked}
+          onPick={(p) => {
+            setPrefill({ ...p, n: Date.now() });
+            toast.success("Pick cargado", { description: "Ajusta el monto y marca el resultado." });
+          }}
+        />
+      </section>
+
+      <section className="mt-4 grid gap-4 lg:grid-cols-3">
+        <BetForm locked={m.locked} onAdd={requestAdd} prefill={prefill} />
+
         <div className="surface p-5 lg:col-span-2">
           <h2 className="flex items-center gap-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
             <BarChart3 className="size-4 text-primary" /> Historial
