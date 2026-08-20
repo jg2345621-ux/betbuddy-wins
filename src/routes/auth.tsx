@@ -44,15 +44,20 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
-        toast.success("Cuenta creada", {
-          description: "Revisa tu correo para confirmar la cuenta.",
-        });
+        if (data.session) {
+          toast.success("Cuenta creada", { description: "Tu bankroll ya se guarda en la nube." });
+          navigate({ to: "/", replace: true });
+        } else {
+          toast.success("Cuenta creada", {
+            description: "Revisa tu correo para confirmar la cuenta.",
+          });
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
