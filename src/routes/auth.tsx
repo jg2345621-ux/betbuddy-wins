@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Mail, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
@@ -27,23 +28,42 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "reset" | "update">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/", replace: true });
+      if (data.session && mode !== "update") navigate({ to: "/", replace: true });
     });
-  }, [navigate]);
+
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") setMode("update");
+    });
+    return () => data.subscription.unsubscribe();
+  }, [navigate, mode]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
     setLoading(true);
     try {
-      if (mode === "signup") {
+      if (mode === "reset") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth`,
+        });
+        if (error) throw error;
+        toast.success("Revisa tu correo", {
+          description: "Te enviamos un enlace para crear una contraseña nueva.",
+        });
+        setMode("signin");
+      } else if (mode === "update") {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+        toast.success("Contraseña actualizada", { description: "Ya puedes usar tu cuenta." });
+        navigate({ to: "/", replace: true });
+      } else if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -64,8 +84,14 @@ function AuthPage() {
         navigate({ to: "/", replace: true });
       }
     } catch (err) {
+      const message = err instanceof Error ? err.message : "";
+      const description = message.toLowerCase().includes("invalid login credentials")
+        ? "El correo o la contraseña no coinciden. Restablece tu contraseña si no la recuerdas."
+        : message.toLowerCase().includes("user already registered")
+          ? "Este correo ya tiene una cuenta. Entra o restablece tu contraseña."
+          : message || "Intenta de nuevo.";
       toast.error("No se pudo continuar", {
-        description: err instanceof Error ? err.message : "Intenta de nuevo.",
+        description,
       });
     } finally {
       setLoading(false);
@@ -100,41 +126,67 @@ function AuthPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@correo.com"
+              disabled={mode === "update"}
             />
           </label>
-          <label className="block">
-            <span className="text-sm text-muted-foreground">Contraseña</span>
-            <input
-              type="password"
-              required
-              minLength={6}
-              autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              className="field mt-1"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
-          </label>
-          <button
+          {mode !== "reset" && (
+            <label className="block">
+              <span className="text-sm text-muted-foreground">
+                {mode === "update" ? "Nueva contraseña" : "Contraseña"}
+              </span>
+              <input
+                type="password"
+                required
+                minLength={8}
+                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                className="field mt-1"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Mínimo 8 caracteres"
+              />
+            </label>
+          )}
+          <Button
             type="submit"
             disabled={loading}
             className="gold-btn flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
           >
             {loading ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
-            {mode === "signup" ? "Crear cuenta" : "Entrar"}
-          </button>
+            {mode === "signup"
+              ? "Crear cuenta"
+              : mode === "reset"
+                ? "Enviar enlace"
+                : mode === "update"
+                  ? "Guardar contraseña"
+                  : "Entrar"}
+          </Button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          {mode === "signup" ? "¿Ya tienes cuenta?" : "¿Aún no tienes cuenta?"}{" "}
-          <button
-            type="button"
-            className="font-semibold text-primary hover:underline"
-            onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
-          >
-            {mode === "signup" ? "Entrar" : "Crear una"}
-          </button>
-        </p>
+        {mode !== "update" && (
+          <div className="mt-4 space-y-2 text-center text-sm text-muted-foreground">
+            <p>
+              {mode === "signup" ? "¿Ya tienes cuenta?" : mode === "reset" ? "¿Recordaste tu contraseña?" : "¿Aún no tienes cuenta?"}{" "}
+              <Button
+                type="button"
+                variant="link"
+                className="h-auto p-0 font-semibold text-primary"
+                onClick={() => setMode(mode === "signup" || mode === "reset" ? "signin" : "signup")}
+              >
+                {mode === "signup" || mode === "reset" ? "Entrar" : "Crear una"}
+              </Button>
+            </p>
+            {mode === "signin" && (
+              <Button
+                type="button"
+                variant="link"
+                className="h-auto p-0 text-xs text-muted-foreground"
+                onClick={() => setMode("reset")}
+              >
+                Olvidé mi contraseña
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       <Link to="/" className="mt-6 text-center text-xs text-muted-foreground hover:underline">
