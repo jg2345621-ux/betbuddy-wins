@@ -263,15 +263,20 @@ export function useBankroll() {
       const local: Bet = { ...bet, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
       setState((s) => ({ ...s, bets: [local, ...s.bets] }));
       if (userId) {
-        void supabase.from("bets").insert({
-          id: local.id,
-          user_id: userId,
-          event: local.event,
-          stake: local.stake,
-          odds: local.odds,
-          result: local.result,
-          created_at: local.createdAt,
-        });
+        void supabase
+          .from("bets")
+          .insert({
+            id: local.id,
+            user_id: userId,
+            event: local.event,
+            stake: local.stake,
+            odds: local.odds,
+            result: local.result,
+            created_at: local.createdAt,
+          })
+          .then(({ error }) => {
+            if (error) console.error("[bets.insert]", error.message);
+          });
       }
     },
     [userId],
