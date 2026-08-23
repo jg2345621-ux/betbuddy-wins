@@ -122,7 +122,7 @@ function ChatWindow({
     if (!busy) textareaRef.current?.focus();
   }, [busy]);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = (_message: unknown, e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const text = input.trim();
     if (!text || busy) return;
