@@ -154,6 +154,36 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string
+          subscription_status: string
+          updated_at: string
+          user_id: string
+          vip_expires_at: string | null
+          vip_since: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string
+          subscription_status?: string
+          updated_at?: string
+          user_id: string
+          vip_expires_at?: string | null
+          vip_since?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          subscription_status?: string
+          updated_at?: string
+          user_id?: string
+          vip_expires_at?: string | null
+          vip_since?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
