@@ -346,6 +346,18 @@ function Header({
             <CloudOff className="size-4" /> Guardar en la nube
           </Link>
         )}
+        <Link
+          to="/comunidad"
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
+        >
+          <Users className="size-4" /> Comunidad
+        </Link>
+        <Link
+          to="/chat"
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
+        >
+          <Bot className="size-4" /> Asistente IA
+        </Link>
         <button
           onClick={onReset}
           className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"

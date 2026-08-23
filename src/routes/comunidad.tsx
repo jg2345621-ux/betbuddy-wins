@@ -42,7 +42,7 @@ function CommunityChat() {
   const [sending, setSending] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const name = email ? email.split("@")[0] : "Apostador";
+  const name = email?.split("@")[0] ?? "Apostador";
 
   useEffect(() => {
     if (!userId) return;
