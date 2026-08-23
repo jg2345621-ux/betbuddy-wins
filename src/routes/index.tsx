@@ -4,6 +4,7 @@ import {
   Activity,
   AlertTriangle,
   BarChart3,
+  Bot,
   Calculator,
   Cloud,
   CloudOff,
