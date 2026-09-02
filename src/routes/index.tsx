@@ -517,12 +517,20 @@ function Dashboard() {
                     Publica, edita o elimina los picks de la comunidad.
                   </div>
                 </div>
-                <button
-                  onClick={() => setEditing(emptyPick())}
-                  className="gold-btn flex h-10 items-center gap-2 px-4 text-[13px]"
-                >
-                  <Plus className="size-4" /> Nuevo pick
-                </button>
+                <div className="flex items-center gap-2">
+                  <Link
+                    to="/admin"
+                    className="flex h-10 items-center gap-2 rounded-xl border border-border px-4 text-[13px] font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  >
+                    <Shield className="size-4" /> Panel completo
+                  </Link>
+                  <button
+                    onClick={() => setEditing(emptyPick())}
+                    className="gold-btn flex h-10 items-center gap-2 px-4 text-[13px]"
+                  >
+                    <Plus className="size-4" /> Nuevo pick
+                  </button>
+                </div>
               </div>
             )}
 
