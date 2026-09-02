@@ -145,7 +145,8 @@ function AdminPage() {
   const toggle = async (pick: Pick, field: "is_active" | "verified") => {
     const next = !pick[field];
     setPicks((prev) => prev.map((p) => (p.id === pick.id ? { ...p, [field]: next } : p)));
-    const { error } = await supabase.from("picks").update({ [field]: next }).eq("id", pick.id);
+    const patch = field === "is_active" ? { is_active: next } : { verified: next };
+    const { error } = await supabase.from("picks").update(patch).eq("id", pick.id);
     if (error) {
       toast.error("No se pudo actualizar");
       void load();
