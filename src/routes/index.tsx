@@ -122,6 +122,8 @@ function Dashboard() {
   const [showVip, setShowVip] = useState(false);
   const [editing, setEditing] = useState<(Omit<Pick, "id"> & { id?: string }) | null>(null);
   const [activating, setActivating] = useState(false);
+  const [baseBankroll, setBaseBankroll] = useState(BASE_BANKROLL);
+
 
   const signedIn = Boolean(userId);
 
@@ -129,22 +131,28 @@ function Dashboard() {
   const syncProfile = useCallback(async (uid: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("subscription_status")
+      .select("subscription_status,bankroll_total")
       .eq("user_id", uid)
       .maybeSingle();
 
     if (!data) {
       await supabase
         .from("profiles")
-        .upsert({ user_id: uid, subscription_status: "free" }, { onConflict: "user_id" });
+        .upsert(
+          { user_id: uid, subscription_status: "free", bankroll_total: BASE_BANKROLL },
+          { onConflict: "user_id" },
+        );
       setIsVip(false);
+      setBaseBankroll(BASE_BANKROLL);
     } else {
       setIsVip(data.subscription_status === "vip");
+      setBaseBankroll(Number(data.bankroll_total ?? BASE_BANKROLL));
     }
 
     const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
     setIsAdmin(Boolean(roles?.some((r) => r.role === "admin")));
   }, []);
+
 
   useEffect(() => {
     const apply = (session: { user: { id: string; email?: string | null } } | null) => {
@@ -212,14 +220,15 @@ function Dashboard() {
     const totalStaked = settled.reduce((acc, b) => acc + b.stake, 0);
     const roi = totalStaked ? Number(((totalProfit / totalStaked) * 100).toFixed(1)) : 0;
     return {
-      bankrollTotal: BASE_BANKROLL + totalProfit,
+      bankrollTotal: baseBankroll + totalProfit,
       totalProfit,
       winRate,
       roi,
       count: bets.length,
       totalStaked,
     };
-  }, [bets]);
+  }, [bets, baseBankroll]);
+
 
   const chartData = useMemo(() => {
     let acc = 0;
@@ -244,23 +253,43 @@ function Dashboard() {
       toast.info("Inicia sesión para guardar tus apuestas");
       return;
     }
-    const stakeValue = Math.max(50, Math.round(stats.bankrollTotal * 0.02));
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("bankroll_total")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (profileError) {
+      toast.error("No se pudo leer tu bankroll", { description: profileError.message });
+      return;
+    }
+
+    const total = Number(profile?.bankroll_total ?? baseBankroll);
+    const stakePercent = Number(pick.stake.replace(/[^0-9.]/g, "")) || 2;
+    const stakeValue = Math.max(50, Math.round((total * stakePercent) / 100));
+
     const { data, error } = await supabase
       .from("bets")
       .insert({
         user_id: userId,
+        pick_id: pick.id,
         event: `${pick.match} · ${pick.market}`,
+        selection: pick.market,
         odds: pick.odds,
         stake: stakeValue,
+        stake_percent: stakePercent,
         result: "pending",
       })
       .select("id,event,odds,stake,result,created_at")
       .maybeSingle();
 
     if (error || !data) {
-      toast.error("No se pudo agregar al bankroll");
+      toast.error("No se pudo agregar al bankroll", {
+        description: error?.message ?? "La base de datos no devolvió la apuesta.",
+      });
       return;
     }
+
     setBets((prev) => [
       ...prev,
       {
@@ -362,7 +391,17 @@ function Dashboard() {
             </div>
           </div>
 
+          <div className="mx-4 hidden flex-1 flex-col items-end leading-none md:flex">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Bankroll total
+            </span>
+            <span className="text-[26px] font-extrabold tracking-tight text-[#FFD60A]">
+              {money(stats.bankrollTotal)} MXN
+            </span>
+          </div>
+
           <div className="flex items-center gap-2">
+
             <Link
               to="/comunidad"
               className="hidden h-9 items-center gap-1.5 rounded-full border border-border bg-secondary px-3 text-[12px] font-medium sm:flex"
@@ -405,7 +444,16 @@ function Dashboard() {
             )}
           </div>
         </div>
+        <div className="flex items-baseline justify-between border-t border-border px-4 py-2 md:hidden">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Bankroll total
+          </span>
+          <span className="text-[22px] font-extrabold tracking-tight text-[#FFD60A]">
+            {money(stats.bankrollTotal)} MXN
+          </span>
+        </div>
       </header>
+
 
       {/* STATS */}
       <div className="mx-auto max-w-[1280px] px-4 pt-6 sm:px-6">
@@ -634,11 +682,12 @@ function Dashboard() {
                     </div>
 
                     {locked && (
-                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/90 p-6 text-center backdrop-blur-md">
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-[22px] bg-black/85 p-6 text-center backdrop-blur-[20px]">
                         <div className="absolute left-4 right-4 top-4 flex items-center justify-between">
-                          <div className="gold-btn flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-extrabold">
+                          <div className="flex items-center gap-1.5 rounded-full border border-success/40 bg-success/15 px-3 py-1 text-[11px] font-extrabold text-success">
                             <Star className="size-3.5" /> ROI +{pick.roi}% VERIFICADO
                           </div>
+
                           <Lock className="size-4 text-muted-foreground" />
                         </div>
                         <div className="grid size-12 place-items-center rounded-2xl border border-border bg-secondary">
@@ -655,11 +704,12 @@ function Dashboard() {
                         </div>
                         <button
                           onClick={() => setShowVip(true)}
-                          className="gold-btn mt-5 flex h-11 items-center gap-2 px-6 text-[13px] font-extrabold"
+                          className="mt-5 flex h-11 items-center gap-2 rounded-full bg-[#FFD60A] px-6 text-[13px] font-extrabold text-black transition hover:brightness-110"
                         >
-                          <Crown className="size-4" /> Desbloquear por ${VIP_PRICE}
+                          <Crown className="size-4" /> Desbloquear por ${VIP_PRICE} MXN
                           <ArrowUpRight className="size-4" />
                         </button>
+
                       </div>
                     )}
                   </div>
