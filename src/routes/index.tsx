@@ -444,7 +444,16 @@ function Dashboard() {
             )}
           </div>
         </div>
+        <div className="flex items-baseline justify-between border-t border-border px-4 py-2 md:hidden">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Bankroll total
+          </span>
+          <span className="text-[22px] font-extrabold tracking-tight text-[#FFD60A]">
+            {money(stats.bankrollTotal)} MXN
+          </span>
+        </div>
       </header>
+
 
       {/* STATS */}
       <div className="mx-auto max-w-[1280px] px-4 pt-6 sm:px-6">
