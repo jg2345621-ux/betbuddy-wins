@@ -704,11 +704,12 @@ function Dashboard() {
                         </div>
                         <button
                           onClick={() => setShowVip(true)}
-                          className="gold-btn mt-5 flex h-11 items-center gap-2 px-6 text-[13px] font-extrabold"
+                          className="mt-5 flex h-11 items-center gap-2 rounded-full bg-[#FFD60A] px-6 text-[13px] font-extrabold text-black transition hover:brightness-110"
                         >
-                          <Crown className="size-4" /> Desbloquear por ${VIP_PRICE}
+                          <Crown className="size-4" /> Desbloquear por ${VIP_PRICE} MXN
                           <ArrowUpRight className="size-4" />
                         </button>
+
                       </div>
                     )}
                   </div>
