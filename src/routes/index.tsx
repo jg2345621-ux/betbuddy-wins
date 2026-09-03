@@ -220,14 +220,15 @@ function Dashboard() {
     const totalStaked = settled.reduce((acc, b) => acc + b.stake, 0);
     const roi = totalStaked ? Number(((totalProfit / totalStaked) * 100).toFixed(1)) : 0;
     return {
-      bankrollTotal: BASE_BANKROLL + totalProfit,
+      bankrollTotal: baseBankroll + totalProfit,
       totalProfit,
       winRate,
       roi,
       count: bets.length,
       totalStaked,
     };
-  }, [bets]);
+  }, [bets, baseBankroll]);
+
 
   const chartData = useMemo(() => {
     let acc = 0;
