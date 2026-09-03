@@ -47,8 +47,11 @@ export type Database = {
           event: string
           id: string
           odds: number
+          pick_id: string | null
           result: string
+          selection: string
           stake: number
+          stake_percent: number
           user_id: string
         }
         Insert: {
@@ -56,8 +59,11 @@ export type Database = {
           event?: string
           id?: string
           odds: number
+          pick_id?: string | null
           result: string
+          selection?: string
           stake: number
+          stake_percent?: number
           user_id: string
         }
         Update: {
@@ -65,11 +71,22 @@ export type Database = {
           event?: string
           id?: string
           odds?: number
+          pick_id?: string | null
           result?: string
+          selection?: string
           stake?: number
+          stake_percent?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bets_pick_id_fkey"
+            columns: ["pick_id"]
+            isOneToOne: false
+            referencedRelation: "picks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_messages: {
         Row: {
@@ -210,6 +227,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          bankroll_total: number
           created_at: string
           display_name: string
           subscription_status: string
@@ -219,6 +237,7 @@ export type Database = {
           vip_since: string | null
         }
         Insert: {
+          bankroll_total?: number
           created_at?: string
           display_name?: string
           subscription_status?: string
@@ -228,6 +247,7 @@ export type Database = {
           vip_since?: string | null
         }
         Update: {
+          bankroll_total?: number
           created_at?: string
           display_name?: string
           subscription_status?: string
