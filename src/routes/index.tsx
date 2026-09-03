@@ -129,22 +129,28 @@ function Dashboard() {
   const syncProfile = useCallback(async (uid: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("subscription_status")
+      .select("subscription_status,bankroll_total")
       .eq("user_id", uid)
       .maybeSingle();
 
     if (!data) {
       await supabase
         .from("profiles")
-        .upsert({ user_id: uid, subscription_status: "free" }, { onConflict: "user_id" });
+        .upsert(
+          { user_id: uid, subscription_status: "free", bankroll_total: BASE_BANKROLL },
+          { onConflict: "user_id" },
+        );
       setIsVip(false);
+      setBaseBankroll(BASE_BANKROLL);
     } else {
       setIsVip(data.subscription_status === "vip");
+      setBaseBankroll(Number(data.bankroll_total ?? BASE_BANKROLL));
     }
 
     const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
     setIsAdmin(Boolean(roles?.some((r) => r.role === "admin")));
   }, []);
+
 
   useEffect(() => {
     const apply = (session: { user: { id: string; email?: string | null } } | null) => {
