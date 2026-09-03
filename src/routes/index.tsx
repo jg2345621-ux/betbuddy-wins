@@ -391,7 +391,17 @@ function Dashboard() {
             </div>
           </div>
 
+          <div className="mx-4 hidden flex-1 flex-col items-end leading-none md:flex">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Bankroll total
+            </span>
+            <span className="text-[26px] font-extrabold tracking-tight text-[#FFD60A]">
+              {money(stats.bankrollTotal)} MXN
+            </span>
+          </div>
+
           <div className="flex items-center gap-2">
+
             <Link
               to="/comunidad"
               className="hidden h-9 items-center gap-1.5 rounded-full border border-border bg-secondary px-3 text-[12px] font-medium sm:flex"
