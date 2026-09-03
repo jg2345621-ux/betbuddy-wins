@@ -1,26 +1,28 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, Mail, TrendingUp } from "lucide-react";
+import { Loader2, Send, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Acceder — BetRoll" },
+      { title: "Acceder — XSAAC BANKROLL" },
       {
         name: "description",
         content:
-          "Inicia sesión en BetRoll para guardar tu bankroll, tus apuestas y tus límites en la nube.",
+          "Entra con Google a XSAAC BANKROLL para guardar tus picks, tu banca y tu historial verificado.",
       },
-      { property: "og:title", content: "Acceder — BetRoll" },
+      { property: "og:title", content: "Acceder — XSAAC BANKROLL" },
       {
         property: "og:description",
-        content: "Guarda tu bankroll y tus límites en la nube con tu cuenta de BetRoll.",
+        content: "Guarda tu bankroll, tus picks y tu ROI en la comunidad oficial de xsaac.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: AuthPage,
@@ -28,75 +30,19 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup" | "reset" | "update">("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session && mode !== "update") navigate({ to: "/", replace: true });
+      if (data.session) navigate({ to: "/", replace: true });
     });
-
-    const { data } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") setMode("update");
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) navigate({ to: "/", replace: true });
     });
     return () => data.subscription.unsubscribe();
-  }, [navigate, mode]);
+  }, [navigate]);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (loading) return;
-    setLoading(true);
-    try {
-      if (mode === "reset") {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth`,
-        });
-        if (error) throw error;
-        toast.success("Revisa tu correo", {
-          description: "Te enviamos un enlace para crear una contraseña nueva.",
-        });
-        setMode("signin");
-      } else if (mode === "update") {
-        const { error } = await supabase.auth.updateUser({ password });
-        if (error) throw error;
-        toast.success("Contraseña actualizada", { description: "Ya puedes usar tu cuenta." });
-        navigate({ to: "/", replace: true });
-      } else if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        if (data.session) {
-          toast.success("Cuenta creada", { description: "Tu bankroll ya se guarda en la nube." });
-          navigate({ to: "/", replace: true });
-        } else {
-          toast.success("Cuenta creada", {
-            description: "Revisa tu correo para confirmar la cuenta.",
-          });
-        }
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        navigate({ to: "/", replace: true });
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "";
-      const description = message.toLowerCase().includes("invalid login credentials")
-        ? "El correo o la contraseña no coinciden. Restablece tu contraseña si no la recuerdas."
-        : message.toLowerCase().includes("user already registered")
-          ? "Este correo ya tiene una cuenta. Entra o restablece tu contraseña."
-          : message || "Intenta de nuevo.";
-      toast.error("No se pudo continuar", {
-        description,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const signInWithGoogle = async () => {
     setLoading(true);
