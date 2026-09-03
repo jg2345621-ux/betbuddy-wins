@@ -682,11 +682,12 @@ function Dashboard() {
                     </div>
 
                     {locked && (
-                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/90 p-6 text-center backdrop-blur-md">
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-[22px] bg-black/85 p-6 text-center backdrop-blur-[20px]">
                         <div className="absolute left-4 right-4 top-4 flex items-center justify-between">
-                          <div className="gold-btn flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-extrabold">
+                          <div className="flex items-center gap-1.5 rounded-full border border-success/40 bg-success/15 px-3 py-1 text-[11px] font-extrabold text-success">
                             <Star className="size-3.5" /> ROI +{pick.roi}% VERIFICADO
                           </div>
+
                           <Lock className="size-4 text-muted-foreground" />
                         </div>
                         <div className="grid size-12 place-items-center rounded-2xl border border-border bg-secondary">
