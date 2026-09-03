@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Crown, Loader2, X } from "lucide-react";
+import { Check, Crown, ExternalLink, Loader2, X } from "lucide-react";
 
 const BENEFITS = [
   "Picks VIP de xsaac antes que nadie",
@@ -8,11 +8,7 @@ const BENEFITS = [
   "Sala privada de la comunidad",
 ];
 
-const METHODS = [
-  { id: "patreon", label: "Patreon", note: "Suscripción mensual" },
-  { id: "discord", label: "Discord VIP", note: "Acceso al canal privado" },
-  { id: "stripe", label: "Tarjeta (Stripe)", note: "Pago con tarjeta" },
-] as const;
+const MERCADO_PAGO_LINK = "https://mpago.la/xsaac";
 
 export function VipModal({
   open,
@@ -25,19 +21,19 @@ export function VipModal({
   onActivate: (method: string) => Promise<void>;
   signedIn: boolean;
 }) {
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   if (!open) return null;
 
-  const pay = async (method: string) => {
-    setBusy(method);
+  const pay = async () => {
+    setBusy(true);
     await new Promise((r) => setTimeout(r, 900));
-    await onActivate(method);
-    setBusy(null);
+    await onActivate("Mercado Pago");
+    setBusy(false);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 backdrop-blur-sm sm:items-center">
-      <div className="surface relative w-full max-w-md p-6">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-4 backdrop-blur-sm sm:items-center">
+      <div className="relative w-full max-w-md rounded-[22px] border border-white/[0.08] bg-[#131314] p-6">
         <button
           onClick={onClose}
           aria-label="Cerrar"
@@ -46,14 +42,15 @@ export function VipModal({
           <X className="size-4" />
         </button>
 
-        <span className="gold-btn inline-flex size-11 items-center justify-center">
+        <span className="grid size-11 place-items-center rounded-xl bg-[#FFD60A] text-black">
           <Crown className="size-6" />
         </span>
         <h2 className="mt-3 text-xl font-bold tracking-tight">
-          Pase <span className="gold-text">VIP de xsaac</span>
+          Pase <span className="text-[#FFD60A]">VIP de xsaac</span>
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Desbloquea todos los picks oficiales del streamer y el seguimiento premium de bankroll.
+          Paga con <span className="font-semibold text-foreground">Mercado Pago de xsaac</span> —
+          link directo. Acceso inmediato por $300 MXN al mes.
         </p>
 
         <ul className="mt-4 space-y-2">
@@ -64,30 +61,27 @@ export function VipModal({
           ))}
         </ul>
 
-        <div className="mt-5 space-y-2">
-          {METHODS.map((m) => (
-            <button
-              key={m.id}
-              disabled={!signedIn || busy !== null}
-              onClick={() => pay(m.label)}
-              className="flex w-full items-center justify-between rounded-xl border border-border bg-secondary px-4 py-3 text-left transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <span>
-                <span className="block text-sm font-semibold">{m.label}</span>
-                <span className="block text-xs text-muted-foreground">{m.note}</span>
-              </span>
-              {busy === m.label ? (
-                <Loader2 className="size-4 animate-spin text-primary" />
-              ) : (
-                <span className="text-xs font-bold text-primary">Activar</span>
-              )}
-            </button>
-          ))}
-        </div>
+        <a
+          href={MERCADO_PAGO_LINK}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#FFD60A] text-[14px] font-extrabold text-black transition hover:brightness-110"
+        >
+          Pagar $300 MXN con Mercado Pago <ExternalLink className="size-4" />
+        </a>
+
+        <button
+          disabled={!signedIn || busy}
+          onClick={pay}
+          className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] text-[13px] font-semibold transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {busy && <Loader2 className="size-4 animate-spin text-[#FFD60A]" />}
+          Ya pagué, activar mi VIP
+        </button>
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
           {signedIn
-            ? "Pago simulado con fines de demostración. No se realiza ningún cargo real."
+            ? "Tras confirmar tu pago con xsaac, activa aquí tu acceso VIP."
             : "Inicia sesión para activar tu pase VIP."}
         </p>
       </div>
