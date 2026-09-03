@@ -253,23 +253,43 @@ function Dashboard() {
       toast.info("Inicia sesión para guardar tus apuestas");
       return;
     }
-    const stakeValue = Math.max(50, Math.round(stats.bankrollTotal * 0.02));
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("bankroll_total")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (profileError) {
+      toast.error("No se pudo leer tu bankroll", { description: profileError.message });
+      return;
+    }
+
+    const total = Number(profile?.bankroll_total ?? baseBankroll);
+    const stakePercent = Number(pick.stake.replace(/[^0-9.]/g, "")) || 2;
+    const stakeValue = Math.max(50, Math.round((total * stakePercent) / 100));
+
     const { data, error } = await supabase
       .from("bets")
       .insert({
         user_id: userId,
+        pick_id: pick.id,
         event: `${pick.match} · ${pick.market}`,
+        selection: pick.market,
         odds: pick.odds,
         stake: stakeValue,
+        stake_percent: stakePercent,
         result: "pending",
       })
       .select("id,event,odds,stake,result,created_at")
       .maybeSingle();
 
     if (error || !data) {
-      toast.error("No se pudo agregar al bankroll");
+      toast.error("No se pudo agregar al bankroll", {
+        description: error?.message ?? "La base de datos no devolvió la apuesta.",
+      });
       return;
     }
+
     setBets((prev) => [
       ...prev,
       {
