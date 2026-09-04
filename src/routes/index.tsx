@@ -399,10 +399,22 @@ function Dashboard() {
             <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               Bankroll total
             </span>
-            <span className="text-[26px] font-extrabold tracking-tight text-[#FFD60A]">
-              {money(stats.bankrollTotal)} MXN
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[26px] font-extrabold tracking-tight text-[#FFD60A]">
+                {money(stats.bankrollTotal)} MXN
+              </span>
+              {signedIn && (
+                <button
+                  aria-label="Editar bankroll"
+                  onClick={openBankrollEditor}
+                  className="grid size-7 place-items-center rounded-full border border-border bg-secondary text-muted-foreground hover:bg-accent"
+                >
+                  <Pencil className="size-3.5" />
+                </button>
+              )}
+            </div>
           </div>
+
 
           <div className="flex items-center gap-2">
 
