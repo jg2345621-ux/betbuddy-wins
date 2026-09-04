@@ -271,16 +271,13 @@ function Dashboard() {
     const { data, error } = await supabase
       .from("bets")
       .insert({
-        user_id: userId,
-        pick_id: pick.id,
+        user_id: userId ?? null,
         event: `${pick.match} · ${pick.market}`,
-        selection: pick.market,
         odds: pick.odds,
         stake: stakeValue,
-        stake_percent: stakePercent,
         result: "pending",
       })
-      .select("id,event,odds,stake,result,created_at")
+      .select("id")
       .maybeSingle();
 
     if (error || !data) {
@@ -294,15 +291,16 @@ function Dashboard() {
       ...prev,
       {
         id: data.id,
-        event: data.event,
-        odds: Number(data.odds),
-        stake: Number(data.stake),
+        event: `${pick.match} · ${pick.market}`,
+        odds: Number(pick.odds),
+        stake: stakeValue,
         result: "pending",
-        created_at: data.created_at,
+        created_at: new Date().toISOString(),
       },
     ]);
     setTab("bankroll");
-    toast.success("Pick agregado a tu bankroll");
+    toast.success("Agregado a tu bankroll");
+
   };
 
   const updateResult = async (id: string, result: ResultType) => {
