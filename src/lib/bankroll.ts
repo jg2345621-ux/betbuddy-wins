@@ -200,7 +200,11 @@ export function useBankroll() {
       setSyncing(true);
       const [{ data: settingsRow }, { data: betRows }] = await Promise.all([
         supabase.from("bankroll_settings").select("*").eq("user_id", userId).maybeSingle(),
-        supabase.from("bets").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+        supabase
+          .from("bets")
+          .select("id, event, stake, odds, result, created_at")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false }),
       ]);
       if (cancelled) return;
 
@@ -238,7 +242,7 @@ export function useBankroll() {
               created_at: b.createdAt,
             })),
           )
-          .select();
+          .select("id");
         if (inserted) bets = inserted.map((r) => rowToBet(r as Row));
       }
 
