@@ -47,46 +47,29 @@ export type Database = {
           event: string
           id: string
           odds: number
-          pick_id: string | null
           result: string
-          selection: string
           stake: number
-          stake_percent: number
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           event?: string
           id?: string
           odds: number
-          pick_id?: string | null
           result: string
-          selection?: string
           stake: number
-          stake_percent?: number
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           event?: string
           id?: string
           odds?: number
-          pick_id?: string | null
           result?: string
-          selection?: string
           stake?: number
-          stake_percent?: number
-          user_id?: string
+          user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "bets_pick_id_fkey"
-            columns: ["pick_id"]
-            isOneToOne: false
-            referencedRelation: "picks"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       chat_messages: {
         Row: {
