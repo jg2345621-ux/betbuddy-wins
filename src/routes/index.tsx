@@ -305,13 +305,17 @@ function Dashboard() {
 
   const updateResult = async (id: string, result: ResultType) => {
     setBets((prev) => prev.map((b) => (b.id === id ? { ...b, result } : b)));
-    const { error } = await supabase.from("bets").update({ result }).eq("id", id);
+    const { error } = await supabase
+      .from("bets")
+      .update({ result })
+      .eq("id", id)
+      .eq("user_id", userId);
     if (error) toast.error("No se pudo actualizar el resultado");
   };
 
   const deleteBet = async (id: string) => {
     setBets((prev) => prev.filter((b) => b.id !== id));
-    await supabase.from("bets").delete().eq("id", id);
+    await supabase.from("bets").delete().eq("id", id).eq("user_id", userId);
   };
 
   const activateVip = async () => {
