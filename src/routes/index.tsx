@@ -316,9 +316,38 @@ function Dashboard() {
 
   const deleteBet = async (id: string) => {
     if (!userId) return;
-    setBets((prev) => prev.filter((b) => b.id !== id));
-    await supabase.from("bets").delete().eq("id", id).eq("user_id", userId);
+    if (!window.confirm("¿Eliminar este pick de tu historial?")) return;
+    const prev = bets;
+    setBets((p) => p.filter((b) => b.id !== id));
+    const { error } = await supabase.from("bets").delete().eq("id", id).eq("user_id", userId);
+    if (error) {
+      setBets(prev);
+      toast.error("No se pudo eliminar el pick");
+      return;
+    }
+    toast.success("Pick eliminado");
   };
+
+  const openBankrollEditor = async () => {
+    if (!userId) return;
+    const current = window.prompt("Bankroll total (MXN)", String(baseBankroll));
+    if (current === null) return;
+    const value = Number(current.replace(/[^0-9.]/g, ""));
+    if (!Number.isFinite(value) || value < 0) {
+      toast.error("Ingresa una cantidad válida");
+      return;
+    }
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({ user_id: userId, bankroll_total: value }, { onConflict: "user_id" });
+    if (error) {
+      toast.error("No se pudo guardar el bankroll");
+      return;
+    }
+    setBaseBankroll(value);
+    toast.success("Bankroll actualizado");
+  };
+
 
   const activateVip = async () => {
     if (!userId) {
