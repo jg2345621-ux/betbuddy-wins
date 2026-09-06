@@ -121,7 +121,7 @@ function Dashboard() {
   const [bets, setBets] = useState<BetRow[]>([]);
   const [showVip, setShowVip] = useState(false);
   const [editing, setEditing] = useState<(Omit<Pick, "id"> & { id?: string }) | null>(null);
-  const [activating, setActivating] = useState(false);
+  
   const [baseBankroll, setBaseBankroll] = useState(BASE_BANKROLL);
 
 
