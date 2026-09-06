@@ -569,7 +569,10 @@ function AdminPage() {
             </tbody>
           </table>
         </div>
+        </>
+        )}
       </main>
+
 
       {draft && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 backdrop-blur-sm sm:items-center">
