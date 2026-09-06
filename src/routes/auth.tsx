@@ -134,6 +134,45 @@ function AuthPage() {
           Continuar con Google
         </button>
 
+        <div className="my-5 flex items-center gap-3 text-[11px] text-muted-foreground">
+          <span className="h-px flex-1 bg-white/[0.08]" />o<span className="h-px flex-1 bg-white/[0.08]" />
+        </div>
+
+        <div className="grid gap-3">
+          <input
+            type="email"
+            value={mail}
+            onChange={(e) => setMail(e.target.value)}
+            placeholder="tucorreo@gmail.com"
+            autoComplete="email"
+            className="h-12 w-full rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 text-sm outline-none focus:border-[#FFD60A]"
+          />
+          <input
+            type="password"
+            value={pass}
+            onChange={(e) => setPass(e.target.value)}
+            placeholder="Contraseña"
+            autoComplete="current-password"
+            className="h-12 w-full rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 text-sm outline-none focus:border-[#FFD60A]"
+          />
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void withEmail("in")}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#FFD60A] text-[15px] font-extrabold text-black transition hover:brightness-110 disabled:opacity-60"
+          >
+            {busy && <Loader2 className="size-4 animate-spin" />} Iniciar sesión
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void withEmail("up")}
+            className="flex h-12 w-full items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-[14px] font-semibold transition hover:bg-white/[0.08] disabled:opacity-60"
+          >
+            Registrarse
+          </button>
+        </div>
+
         <button
           type="button"
           disabled
@@ -141,6 +180,7 @@ function AuthPage() {
         >
           <Send className="size-5" /> Entrar con Telegram (pronto)
         </button>
+
 
         <p className="mt-5 text-center text-xs leading-relaxed text-muted-foreground">
           Al continuar aceptas que esto es información de entretenimiento, no asesoría financiera.
