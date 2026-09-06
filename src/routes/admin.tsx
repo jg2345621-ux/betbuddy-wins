@@ -319,7 +319,114 @@ function AdminPage() {
       </header>
 
       <main className="mx-auto max-w-[1280px] px-4 py-6 pb-24 sm:px-6">
+        <div className="mb-5 flex gap-2 overflow-x-auto">
+          {(
+            [
+              ["picks", "Picks"],
+              ["users", "Usuarios"],
+              ["bets", "Picks antiguos"],
+            ] as const
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`h-10 shrink-0 rounded-xl border px-4 text-[13px] font-semibold transition-colors ${
+                tab === key
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "users" && (
+          <div className="surface overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead className="border-b border-border text-[11px] tracking-wide text-muted-foreground uppercase">
+                <tr>
+                  <th className="px-4 py-3">Correo</th>
+                  <th className="px-4 py-3">Bankroll</th>
+                  <th className="px-4 py-3">Plan</th>
+                </tr>
+              </thead>
+              <tbody>
+                {profiles.map((u) => (
+                  <tr key={u.user_id} className="border-b border-border/60 last:border-0">
+                    <td className="px-4 py-3 font-semibold">{u.email ?? u.display_name}</td>
+                    <td className="px-4 py-3">${Number(u.bankroll_total ?? 0).toLocaleString("es-MX")}</td>
+                    <td className="px-4 py-3">
+                      <select
+                        value={u.is_vip ? "VIP" : "FREE"}
+                        onChange={(e) => void setUserPlan(u, e.target.value)}
+                        className={inputCls}
+                      >
+                        <option value="FREE">FREE</option>
+                        <option value="VIP">VIP</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+                {profiles.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                      Aún no hay usuarios registrados.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {tab === "bets" && (
+          <div className="surface overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead className="border-b border-border text-[11px] tracking-wide text-muted-foreground uppercase">
+                <tr>
+                  <th className="px-4 py-3">Evento</th>
+                  <th className="px-4 py-3">Stake</th>
+                  <th className="px-4 py-3">Cuota</th>
+                  <th className="px-4 py-3">Resultado</th>
+                  <th className="px-4 py-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {oldBets.map((b) => (
+                  <tr key={b.id} className="border-b border-border/60 last:border-0">
+                    <td className="px-4 py-3 font-semibold">{b.event || "—"}</td>
+                    <td className="px-4 py-3">${Number(b.stake).toLocaleString("es-MX")}</td>
+                    <td className="px-4 py-3">{Number(b.odds).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{b.result}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end">
+                        <button
+                          onClick={() => void removeBet(b.id)}
+                          aria-label="Eliminar"
+                          className="rounded-md border border-border p-2 text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {oldBets.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                      No hay picks registrados.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {tab === "picks" && (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+
           {[
             { label: "Picks totales", value: stats.total },
             { label: "Picks VIP", value: stats.vip },
