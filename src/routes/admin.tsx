@@ -74,14 +74,38 @@ const emptyDraft = (): Draft => ({
   is_active: true,
 });
 
+type ProfileRow = {
+  user_id: string;
+  email: string | null;
+  display_name: string;
+  bankroll_total: number;
+  subscription_status: string;
+  is_vip: boolean;
+  created_at: string;
+};
+
+type BetRow = {
+  id: string;
+  user_id: string | null;
+  event: string;
+  stake: number;
+  odds: number;
+  result: string;
+  created_at: string;
+};
+
 function AdminPage() {
   const [checking, setChecking] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [tab, setTab] = useState<"picks" | "users" | "bets">("picks");
+  const [profiles, setProfiles] = useState<ProfileRow[]>([]);
+  const [oldBets, setOldBets] = useState<BetRow[]>([]);
   const [picks, setPicks] = useState<Pick[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | PickType>("all");
+
 
   useEffect(() => {
     let alive = true;
