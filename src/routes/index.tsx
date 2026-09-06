@@ -359,31 +359,12 @@ function Dashboard() {
   };
 
 
-  const activateVip = async () => {
-    if (!userId) {
-      toast.info("Crea tu cuenta para activar el VIP");
-      return;
-    }
-    setActivating(true);
-    const now = new Date();
-    const { error } = await supabase.from("profiles").upsert(
-      {
-        user_id: userId,
-        subscription_status: "vip",
-        vip_since: now.toISOString(),
-        vip_expires_at: new Date(now.getTime() + 30 * 864e5).toISOString(),
-      },
-      { onConflict: "user_id" },
-    );
-    setActivating(false);
-    if (error) {
-      toast.error("No se pudo activar el VIP");
-      return;
-    }
-    setIsVip(true);
-    setShowVip(false);
-    toast.success(`VIP activado · $${VIP_PRICE} MXN`);
+  const requestVip = () => {
+    toast.info("Contacta a xsaac para activar tu VIP", {
+      description: `El acceso VIP de $${VIP_PRICE} MXN lo activa xsaac manualmente tras confirmar tu pago.`,
+    });
   };
+
 
   const savePick = async () => {
     if (!editing) return;
