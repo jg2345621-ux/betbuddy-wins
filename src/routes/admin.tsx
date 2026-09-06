@@ -141,9 +141,67 @@ function AdminPage() {
     setPicks((data ?? []) as unknown as Pick[]);
   }, []);
 
+  const loadUsers = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      toast.error("No se pudieron cargar los usuarios");
+      return;
+    }
+    setProfiles((data ?? []) as unknown as ProfileRow[]);
+  }, []);
+
+  const loadOldBets = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("bets")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      toast.error("No se pudieron cargar los picks antiguos");
+      return;
+    }
+    setOldBets((data ?? []) as unknown as BetRow[]);
+  }, []);
+
+  const setUserPlan = async (row: ProfileRow, value: string) => {
+    const vip = value === "VIP";
+    setProfiles((prev) =>
+      prev.map((p) =>
+        p.user_id === row.user_id ? { ...p, subscription_status: value, is_vip: vip } : p,
+      ),
+    );
+    const { error } = await supabase
+      .from("profiles")
+      .update({ subscription_status: value, is_vip: vip })
+      .eq("user_id", row.user_id);
+    if (error) {
+      toast.error("No se pudo actualizar el plan");
+      void loadUsers();
+      return;
+    }
+    toast.success(vip ? "Usuario ahora es VIP" : "Usuario ahora es FREE");
+  };
+
+  const removeBet = async (id: string) => {
+    if (!confirm("¿Borrar?")) return;
+    const { error } = await supabase.from("bets").delete().eq("id", id);
+    if (error) {
+      toast.error("No se pudo eliminar el pick");
+      return;
+    }
+    setOldBets((prev) => prev.filter((b) => b.id !== id));
+    toast.success("Pick eliminado");
+  };
+
   useEffect(() => {
-    if (isAdmin) void load();
-  }, [isAdmin, load]);
+    if (!isAdmin) return;
+    void load();
+    void loadUsers();
+    void loadOldBets();
+  }, [isAdmin, load, loadUsers, loadOldBets]);
+
 
   const save = async () => {
     if (!draft) return;
