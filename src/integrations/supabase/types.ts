@@ -213,6 +213,8 @@ export type Database = {
           bankroll_total: number
           created_at: string
           display_name: string
+          email: string | null
+          is_vip: boolean
           subscription_status: string
           updated_at: string
           user_id: string
@@ -223,6 +225,8 @@ export type Database = {
           bankroll_total?: number
           created_at?: string
           display_name?: string
+          email?: string | null
+          is_vip?: boolean
           subscription_status?: string
           updated_at?: string
           user_id: string
@@ -233,6 +237,8 @@ export type Database = {
           bankroll_total?: number
           created_at?: string
           display_name?: string
+          email?: string | null
+          is_vip?: boolean
           subscription_status?: string
           updated_at?: string
           user_id?: string
