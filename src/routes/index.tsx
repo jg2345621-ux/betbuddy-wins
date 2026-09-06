@@ -169,7 +169,7 @@ function Dashboard() {
       const uid = session?.user.id ?? null;
       setUserId(uid);
       setEmail(session?.user.email ?? null);
-      if (uid) void syncProfile(uid);
+      if (uid) void syncProfile(uid, session?.user.email ?? null);
       else {
         setIsVip(false);
         setIsAdmin(false);
