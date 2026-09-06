@@ -1049,15 +1049,16 @@ function Dashboard() {
             </div>
 
             <button
-              onClick={activateVip}
-              disabled={activating || isVip}
+              onClick={requestVip}
+              disabled={isVip}
               className="gold-btn mt-5 flex h-[52px] w-full items-center justify-center gap-2 text-[15px] font-extrabold disabled:opacity-60"
             >
               <Zap className="size-5" />
-              {isVip ? "VIP activo" : `Activar VIP por $${VIP_PRICE} MXN`}
+              {isVip ? "VIP activo" : `Desbloquear por $${VIP_PRICE} MXN`}
             </button>
             <div className="mt-3 text-center text-[11px] text-muted-foreground">
-              Pago simulado con fines de demostración. No se realiza ningún cargo real.
+              El acceso VIP lo activa xsaac después de confirmar tu pago.
+
             </div>
           </div>
         </div>
