@@ -31,6 +31,9 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [mail, setMail] = useState("");
+  const [pass, setPass] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -41,8 +44,6 @@ function AuthPage() {
     });
     return () => data.subscription.unsubscribe();
   }, [navigate]);
-
-
 
   const signInWithGoogle = async () => {
     setLoading(true);
@@ -55,6 +56,35 @@ function AuthPage() {
       setLoading(false);
     }
   };
+
+  const withEmail = async (mode: "in" | "up") => {
+    if (!mail.trim() || pass.length < 6) {
+      toast.error("Escribe tu correo y una contraseña de 6 caracteres o más");
+      return;
+    }
+    setBusy(true);
+    const res =
+      mode === "in"
+        ? await supabase.auth.signInWithPassword({ email: mail.trim(), password: pass })
+        : await supabase.auth.signUp({
+            email: mail.trim(),
+            password: pass,
+            options: { emailRedirectTo: window.location.origin },
+          });
+    setBusy(false);
+    if (res.error) {
+      toast.error(mode === "in" ? "No se pudo iniciar sesión" : "No se pudo registrar", {
+        description: res.error.message,
+      });
+      return;
+    }
+    if (mode === "up" && !res.data.session) {
+      toast.success("Cuenta creada", { description: "Revisa tu correo para confirmarla." });
+      return;
+    }
+    toast.success("Bienvenido");
+  };
+
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-4 py-10">
