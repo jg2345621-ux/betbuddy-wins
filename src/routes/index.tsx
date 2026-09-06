@@ -128,30 +128,40 @@ function Dashboard() {
   const signedIn = Boolean(userId);
 
   /* ---------- sesión + perfil ---------- */
-  const syncProfile = useCallback(async (uid: string) => {
+  const syncProfile = useCallback(async (uid: string, userEmail: string | null) => {
     const { data } = await supabase
       .from("profiles")
-      .select("subscription_status,bankroll_total")
+      .select("is_vip,subscription_status,bankroll_total")
       .eq("user_id", uid)
       .maybeSingle();
 
     if (!data) {
-      await supabase
-        .from("profiles")
-        .upsert(
-          { user_id: uid, subscription_status: "free", bankroll_total: BASE_BANKROLL },
-          { onConflict: "user_id" },
-        );
+      await supabase.from("profiles").upsert(
+        {
+          user_id: uid,
+          email: userEmail,
+          subscription_status: "FREE",
+          is_vip: false,
+          bankroll_total: 500,
+        },
+        { onConflict: "user_id" },
+      );
       setIsVip(false);
-      setBaseBankroll(BASE_BANKROLL);
+      setBaseBankroll(500);
     } else {
-      setIsVip(data.subscription_status === "vip");
+      const vip =
+        data.is_vip === true || String(data.subscription_status).toUpperCase() === "VIP";
+      setIsVip(vip);
       setBaseBankroll(Number(data.bankroll_total ?? BASE_BANKROLL));
+      if (userEmail) {
+        await supabase.from("profiles").update({ email: userEmail }).eq("user_id", uid);
+      }
     }
 
     const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
     setIsAdmin(Boolean(roles?.some((r) => r.role === "admin")));
   }, []);
+
 
 
   useEffect(() => {
