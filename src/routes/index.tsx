@@ -121,32 +121,41 @@ function Dashboard() {
   const [bets, setBets] = useState<BetRow[]>([]);
   const [showVip, setShowVip] = useState(false);
   const [editing, setEditing] = useState<(Omit<Pick, "id"> & { id?: string }) | null>(null);
-  const [activating, setActivating] = useState(false);
+  
   const [baseBankroll, setBaseBankroll] = useState(BASE_BANKROLL);
 
 
   const signedIn = Boolean(userId);
 
   /* ---------- sesión + perfil ---------- */
-  const syncProfile = useCallback(async (uid: string) => {
+  const syncProfile = useCallback(async (uid: string, userEmail: string | null) => {
     const { data } = await supabase
       .from("profiles")
-      .select("subscription_status,bankroll_total")
+      .select("is_vip,subscription_status,bankroll_total")
       .eq("user_id", uid)
       .maybeSingle();
 
     if (!data) {
-      await supabase
-        .from("profiles")
-        .upsert(
-          { user_id: uid, subscription_status: "free", bankroll_total: BASE_BANKROLL },
-          { onConflict: "user_id" },
-        );
+      await supabase.from("profiles").upsert(
+        {
+          user_id: uid,
+          email: userEmail,
+          subscription_status: "FREE",
+          is_vip: false,
+          bankroll_total: 500,
+        },
+        { onConflict: "user_id" },
+      );
       setIsVip(false);
-      setBaseBankroll(BASE_BANKROLL);
+      setBaseBankroll(500);
     } else {
-      setIsVip(data.subscription_status === "vip");
+      const vip =
+        data.is_vip === true || String(data.subscription_status).toUpperCase() === "VIP";
+      setIsVip(vip);
       setBaseBankroll(Number(data.bankroll_total ?? BASE_BANKROLL));
+      if (userEmail) {
+        await supabase.from("profiles").update({ email: userEmail }).eq("user_id", uid);
+      }
     }
 
     const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
@@ -154,12 +163,13 @@ function Dashboard() {
   }, []);
 
 
+
   useEffect(() => {
     const apply = (session: { user: { id: string; email?: string | null } } | null) => {
       const uid = session?.user.id ?? null;
       setUserId(uid);
       setEmail(session?.user.email ?? null);
-      if (uid) void syncProfile(uid);
+      if (uid) void syncProfile(uid, session?.user.email ?? null);
       else {
         setIsVip(false);
         setIsAdmin(false);
@@ -349,31 +359,12 @@ function Dashboard() {
   };
 
 
-  const activateVip = async () => {
-    if (!userId) {
-      toast.info("Crea tu cuenta para activar el VIP");
-      return;
-    }
-    setActivating(true);
-    const now = new Date();
-    const { error } = await supabase.from("profiles").upsert(
-      {
-        user_id: userId,
-        subscription_status: "vip",
-        vip_since: now.toISOString(),
-        vip_expires_at: new Date(now.getTime() + 30 * 864e5).toISOString(),
-      },
-      { onConflict: "user_id" },
-    );
-    setActivating(false);
-    if (error) {
-      toast.error("No se pudo activar el VIP");
-      return;
-    }
-    setIsVip(true);
-    setShowVip(false);
-    toast.success(`VIP activado · $${VIP_PRICE} MXN`);
+  const requestVip = () => {
+    toast.info("Contacta a xsaac para activar tu VIP", {
+      description: `El acceso VIP de $${VIP_PRICE} MXN lo activa xsaac manualmente tras confirmar tu pago.`,
+    });
   };
+
 
   const savePick = async () => {
     if (!editing) return;
@@ -1058,15 +1049,16 @@ function Dashboard() {
             </div>
 
             <button
-              onClick={activateVip}
-              disabled={activating || isVip}
+              onClick={requestVip}
+              disabled={isVip}
               className="gold-btn mt-5 flex h-[52px] w-full items-center justify-center gap-2 text-[15px] font-extrabold disabled:opacity-60"
             >
               <Zap className="size-5" />
-              {isVip ? "VIP activo" : `Activar VIP por $${VIP_PRICE} MXN`}
+              {isVip ? "VIP activo" : `Desbloquear por $${VIP_PRICE} MXN`}
             </button>
             <div className="mt-3 text-center text-[11px] text-muted-foreground">
-              Pago simulado con fines de demostración. No se realiza ningún cargo real.
+              El acceso VIP lo activa xsaac después de confirmar tu pago.
+
             </div>
           </div>
         </div>

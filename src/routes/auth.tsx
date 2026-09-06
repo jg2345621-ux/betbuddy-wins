@@ -31,6 +31,9 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [mail, setMail] = useState("");
+  const [pass, setPass] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -41,8 +44,6 @@ function AuthPage() {
     });
     return () => data.subscription.unsubscribe();
   }, [navigate]);
-
-
 
   const signInWithGoogle = async () => {
     setLoading(true);
@@ -55,6 +56,35 @@ function AuthPage() {
       setLoading(false);
     }
   };
+
+  const withEmail = async (mode: "in" | "up") => {
+    if (!mail.trim() || pass.length < 6) {
+      toast.error("Escribe tu correo y una contraseña de 6 caracteres o más");
+      return;
+    }
+    setBusy(true);
+    const res =
+      mode === "in"
+        ? await supabase.auth.signInWithPassword({ email: mail.trim(), password: pass })
+        : await supabase.auth.signUp({
+            email: mail.trim(),
+            password: pass,
+            options: { emailRedirectTo: window.location.origin },
+          });
+    setBusy(false);
+    if (res.error) {
+      toast.error(mode === "in" ? "No se pudo iniciar sesión" : "No se pudo registrar", {
+        description: res.error.message,
+      });
+      return;
+    }
+    if (mode === "up" && !res.data.session) {
+      toast.success("Cuenta creada", { description: "Revisa tu correo para confirmarla." });
+      return;
+    }
+    toast.success("Bienvenido");
+  };
+
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-4 py-10">
@@ -104,6 +134,45 @@ function AuthPage() {
           Continuar con Google
         </button>
 
+        <div className="my-5 flex items-center gap-3 text-[11px] text-muted-foreground">
+          <span className="h-px flex-1 bg-white/[0.08]" />o<span className="h-px flex-1 bg-white/[0.08]" />
+        </div>
+
+        <div className="grid gap-3">
+          <input
+            type="email"
+            value={mail}
+            onChange={(e) => setMail(e.target.value)}
+            placeholder="tucorreo@gmail.com"
+            autoComplete="email"
+            className="h-12 w-full rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 text-sm outline-none focus:border-[#FFD60A]"
+          />
+          <input
+            type="password"
+            value={pass}
+            onChange={(e) => setPass(e.target.value)}
+            placeholder="Contraseña"
+            autoComplete="current-password"
+            className="h-12 w-full rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 text-sm outline-none focus:border-[#FFD60A]"
+          />
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void withEmail("in")}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#FFD60A] text-[15px] font-extrabold text-black transition hover:brightness-110 disabled:opacity-60"
+          >
+            {busy && <Loader2 className="size-4 animate-spin" />} Iniciar sesión
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void withEmail("up")}
+            className="flex h-12 w-full items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-[14px] font-semibold transition hover:bg-white/[0.08] disabled:opacity-60"
+          >
+            Registrarse
+          </button>
+        </div>
+
         <button
           type="button"
           disabled
@@ -111,6 +180,7 @@ function AuthPage() {
         >
           <Send className="size-5" /> Entrar con Telegram (pronto)
         </button>
+
 
         <p className="mt-5 text-center text-xs leading-relaxed text-muted-foreground">
           Al continuar aceptas que esto es información de entretenimiento, no asesoría financiera.
