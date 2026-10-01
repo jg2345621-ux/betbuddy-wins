@@ -47,23 +47,8 @@ export function useSubscription() {
     };
   }, [load]);
 
-  const activateVip = useCallback(async () => {
-    if (!userId) return false;
-    const now = new Date();
-    const expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-    const { error } = await supabase.from("profiles").upsert(
-      {
-        user_id: userId,
-        subscription_status: "vip",
-        vip_since: now.toISOString(),
-        vip_expires_at: expires.toISOString(),
-      },
-      { onConflict: "user_id" },
-    );
-    if (error) return false;
-    setStatus("vip");
-    return true;
-  }, [userId]);
+  // VIP is granted only by an admin in the panel; never self-activated.
+  const activateVip = useCallback(async () => false, []);
 
   const cancelVip = useCallback(async () => {
     if (!userId) return false;
