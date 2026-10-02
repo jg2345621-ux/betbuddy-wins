@@ -169,16 +169,15 @@ function Dashboard() {
         { onConflict: "user_id" },
       );
       setIsVip(false);
-      setBaseBankroll(500);
     } else {
       const vip =
         data.is_vip === true || String(data.subscription_status).toUpperCase() === "VIP";
       setIsVip(vip);
-      setBaseBankroll(Number(data.bankroll_total ?? BASE_BANKROLL));
       if (userEmail) {
         await supabase.from("profiles").update({ email: userEmail }).eq("user_id", uid);
       }
     }
+    setBaseBankroll(readLocalBankroll(userEmail));
 
     const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
     setIsAdmin(Boolean(roles?.some((r) => r.role === "admin")));
@@ -196,6 +195,7 @@ function Dashboard() {
         setIsVip(false);
         setIsAdmin(false);
         setBets([]);
+        setBaseBankroll(readLocalBankroll(null));
       }
     };
 
@@ -335,15 +335,16 @@ function Dashboard() {
 
   };
 
-  const updateResult = async (id: string, result: ResultType) => {
-    if (!userId) return;
-    setBets((prev) => prev.map((b) => (b.id === id ? { ...b, result } : b)));
-    const { error } = await supabase
-      .from("bets")
-      .update({ result })
-      .eq("id", id)
-      .eq("user_id", userId);
-    if (error) toast.error("No se pudo actualizar el resultado");
+  const updateResult = (id: string, result: ResultType) => {
+    try {
+      if (!id || !bets.some((b) => b.id === id)) {
+        toast.error("No se encontró la apuesta");
+        return;
+      }
+      setBets((prev) => prev.map((b) => (b.id === id ? { ...b, result } : b)));
+    } catch {
+      toast.error("No se pudo actualizar el resultado");
+    }
   };
 
   const deleteBet = async (id: string) => {
@@ -360,23 +361,21 @@ function Dashboard() {
     toast.success("Pick eliminado");
   };
 
-  const openBankrollEditor = async () => {
+  const openBankrollEditor = () => {
     if (!userId) return;
-    const current = window.prompt("Bankroll total (MXN)", String(baseBankroll));
-    if (current === null) return;
-    const value = Number(current.replace(/[^0-9.]/g, ""));
+    setBankrollInput(String(baseBankroll));
+    setBankrollModal(true);
+  };
+
+  const saveBankroll = () => {
+    const value = Number(bankrollInput.replace(/[^0-9.]/g, ""));
     if (!Number.isFinite(value) || value < 0) {
       toast.error("Ingresa una cantidad válida");
       return;
     }
-    const { error } = await supabase
-      .from("profiles")
-      .upsert({ user_id: userId, bankroll_total: value }, { onConflict: "user_id" });
-    if (error) {
-      toast.error("No se pudo guardar el bankroll");
-      return;
-    }
+    writeLocalBankroll(email, value);
     setBaseBankroll(value);
+    setBankrollModal(false);
     toast.success("Bankroll actualizado");
   };
 
