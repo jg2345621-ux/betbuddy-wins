@@ -88,7 +88,27 @@ type BetRow = {
   created_at: string;
 };
 
-const BASE_BANKROLL = 25000;
+const BASE_BANKROLL = 500;
+
+const bankrollKey = (userEmail: string | null) => `bankroll_${userEmail ?? "anon"}`;
+
+function readLocalBankroll(userEmail: string | null): number {
+  try {
+    const raw = localStorage.getItem(bankrollKey(userEmail));
+    const n = Number(raw);
+    return raw !== null && Number.isFinite(n) && n >= 0 ? n : BASE_BANKROLL;
+  } catch {
+    return BASE_BANKROLL;
+  }
+}
+
+function writeLocalBankroll(userEmail: string | null, value: number) {
+  try {
+    localStorage.setItem(bankrollKey(userEmail), String(value));
+  } catch {
+    /* almacenamiento no disponible */
+  }
+}
 
 const emptyPick = (): Omit<Pick, "id"> => ({
   type: "free",
@@ -121,8 +141,10 @@ function Dashboard() {
   const [bets, setBets] = useState<BetRow[]>([]);
   const [showVip, setShowVip] = useState(false);
   const [editing, setEditing] = useState<(Omit<Pick, "id"> & { id?: string }) | null>(null);
-  
+
   const [baseBankroll, setBaseBankroll] = useState(BASE_BANKROLL);
+  const [bankrollModal, setBankrollModal] = useState(false);
+  const [bankrollInput, setBankrollInput] = useState("");
 
 
   const signedIn = Boolean(userId);
