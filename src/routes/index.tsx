@@ -347,6 +347,16 @@ function Dashboard() {
     }
   };
 
+  const updateStake = (id: string, value: string) => {
+    try {
+      const stake = Math.max(0, Math.round(Number(value) || 0));
+      if (!id || !bets.some((b) => b.id === id)) return;
+      setBets((prev) => prev.map((b) => (b.id === id ? { ...b, stake } : b)));
+    } catch {
+      toast.error("No se pudo actualizar el stake");
+    }
+  };
+
   const deleteBet = async (id: string) => {
     if (!userId) return;
     if (!window.confirm("¿Eliminar este pick de tu historial?")) return;
@@ -843,7 +853,19 @@ function Dashboard() {
                             {new Date(row.created_at).toLocaleDateString("es-MX")} • @{row.odds}
                           </div>
                         </td>
-                        <td>{money(row.stake)}</td>
+                        <td>
+                          <div className="flex items-center gap-1">
+                            <span className="text-muted-foreground">$</span>
+                            <input
+                              type="number"
+                              min={0}
+                              value={row.stake}
+                              onChange={(e) => updateStake(row.id, e.target.value)}
+                              className="h-7 w-20 rounded-md border border-border bg-secondary px-2 text-[12px] font-bold outline-none focus:border-primary"
+                              aria-label="Cantidad apostada"
+                            />
+                          </div>
+                        </td>
                         <td>
                           <div className="flex items-center gap-1">
                             {(["win", "loss", "pending"] as ResultType[]).map((r) => (
