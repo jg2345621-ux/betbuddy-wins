@@ -88,7 +88,27 @@ type BetRow = {
   created_at: string;
 };
 
-const BASE_BANKROLL = 25000;
+const BASE_BANKROLL = 500;
+
+const bankrollKey = (userEmail: string | null) => `bankroll_${userEmail ?? "anon"}`;
+
+function readLocalBankroll(userEmail: string | null): number {
+  try {
+    const raw = localStorage.getItem(bankrollKey(userEmail));
+    const n = Number(raw);
+    return raw !== null && Number.isFinite(n) && n >= 0 ? n : BASE_BANKROLL;
+  } catch {
+    return BASE_BANKROLL;
+  }
+}
+
+function writeLocalBankroll(userEmail: string | null, value: number) {
+  try {
+    localStorage.setItem(bankrollKey(userEmail), String(value));
+  } catch {
+    /* almacenamiento no disponible */
+  }
+}
 
 const emptyPick = (): Omit<Pick, "id"> => ({
   type: "free",
@@ -121,8 +141,10 @@ function Dashboard() {
   const [bets, setBets] = useState<BetRow[]>([]);
   const [showVip, setShowVip] = useState(false);
   const [editing, setEditing] = useState<(Omit<Pick, "id"> & { id?: string }) | null>(null);
-  
+
   const [baseBankroll, setBaseBankroll] = useState(BASE_BANKROLL);
+  const [bankrollModal, setBankrollModal] = useState(false);
+  const [bankrollInput, setBankrollInput] = useState("");
 
 
   const signedIn = Boolean(userId);
@@ -147,16 +169,15 @@ function Dashboard() {
         { onConflict: "user_id" },
       );
       setIsVip(false);
-      setBaseBankroll(500);
     } else {
       const vip =
         data.is_vip === true || String(data.subscription_status).toUpperCase() === "VIP";
       setIsVip(vip);
-      setBaseBankroll(Number(data.bankroll_total ?? BASE_BANKROLL));
       if (userEmail) {
         await supabase.from("profiles").update({ email: userEmail }).eq("user_id", uid);
       }
     }
+    setBaseBankroll(readLocalBankroll(userEmail));
 
     const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
     setIsAdmin(Boolean(roles?.some((r) => r.role === "admin")));
@@ -174,6 +195,7 @@ function Dashboard() {
         setIsVip(false);
         setIsAdmin(false);
         setBets([]);
+        setBaseBankroll(readLocalBankroll(null));
       }
     };
 
@@ -313,15 +335,16 @@ function Dashboard() {
 
   };
 
-  const updateResult = async (id: string, result: ResultType) => {
-    if (!userId) return;
-    setBets((prev) => prev.map((b) => (b.id === id ? { ...b, result } : b)));
-    const { error } = await supabase
-      .from("bets")
-      .update({ result })
-      .eq("id", id)
-      .eq("user_id", userId);
-    if (error) toast.error("No se pudo actualizar el resultado");
+  const updateResult = (id: string, result: ResultType) => {
+    try {
+      if (!id || !bets.some((b) => b.id === id)) {
+        toast.error("No se encontró la apuesta");
+        return;
+      }
+      setBets((prev) => prev.map((b) => (b.id === id ? { ...b, result } : b)));
+    } catch {
+      toast.error("No se pudo actualizar el resultado");
+    }
   };
 
   const deleteBet = async (id: string) => {
@@ -338,23 +361,21 @@ function Dashboard() {
     toast.success("Pick eliminado");
   };
 
-  const openBankrollEditor = async () => {
+  const openBankrollEditor = () => {
     if (!userId) return;
-    const current = window.prompt("Bankroll total (MXN)", String(baseBankroll));
-    if (current === null) return;
-    const value = Number(current.replace(/[^0-9.]/g, ""));
+    setBankrollInput(String(baseBankroll));
+    setBankrollModal(true);
+  };
+
+  const saveBankroll = () => {
+    const value = Number(bankrollInput.replace(/[^0-9.]/g, ""));
     if (!Number.isFinite(value) || value < 0) {
       toast.error("Ingresa una cantidad válida");
       return;
     }
-    const { error } = await supabase
-      .from("profiles")
-      .upsert({ user_id: userId, bankroll_total: value }, { onConflict: "user_id" });
-    if (error) {
-      toast.error("No se pudo guardar el bankroll");
-      return;
-    }
+    writeLocalBankroll(email, value);
     setBaseBankroll(value);
+    setBankrollModal(false);
     toast.success("Bankroll actualizado");
   };
 
@@ -1001,6 +1022,46 @@ function Dashboard() {
           </div>
         )}
       </main>
+
+      {/* MODAL EDITAR BANKROLL */}
+      {bankrollModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-md"
+            onClick={() => setBankrollModal(false)}
+          />
+          <div className="surface relative w-full max-w-[400px] p-6">
+            <div className="flex items-center justify-between">
+              <div className="text-lg font-bold">Editar mi bankroll</div>
+              <button
+                aria-label="Cerrar"
+                onClick={() => setBankrollModal(false)}
+                className="grid size-9 place-items-center rounded-full border border-border bg-secondary hover:bg-accent"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+            <label className="mt-4 block text-xs font-semibold text-muted-foreground">
+              Total de fondos (MXN)
+              <input
+                className="field mt-1"
+                type="number"
+                min={0}
+                step="any"
+                value={bankrollInput}
+                onChange={(e) => setBankrollInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveBankroll();
+                }}
+                autoFocus
+              />
+            </label>
+            <button onClick={saveBankroll} className="gold-btn mt-5 h-11 w-full text-[14px]">
+              Guardar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* MODAL VIP */}
       {showVip && (
