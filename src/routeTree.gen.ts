@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as ComunidadRouteImport } from './routes/comunidad'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ChatIndexRouteImport } from './routes/chat.index'
 import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
@@ -30,11 +29,6 @@ const AdminRoute = AdminRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ComunidadRoute = ComunidadRouteImport.update({
-  id: '/comunidad',
-  path: '/comunidad',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
@@ -57,7 +51,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
-  '/comunidad': typeof ComunidadRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat/': typeof ChatIndexRoute
@@ -66,7 +59,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
-  '/comunidad': typeof ComunidadRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat': typeof ChatIndexRoute
@@ -76,7 +68,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
-  '/comunidad': typeof ComunidadRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat/': typeof ChatIndexRoute
@@ -84,28 +75,14 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
-    | '/admin'
-    | '/auth'
-    | '/comunidad'
-    | '/api/chat'
-    | '/chat/$threadId'
-    | '/chat/'
+    '/' | '/admin' | '/auth' | '/api/chat' | '/chat/$threadId' | '/chat/'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/admin'
-    | '/auth'
-    | '/comunidad'
-    | '/api/chat'
-    | '/chat/$threadId'
-    | '/chat'
+  to: '/' | '/admin' | '/auth' | '/api/chat' | '/chat/$threadId' | '/chat'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/auth'
-    | '/comunidad'
     | '/api/chat'
     | '/chat/$threadId'
     | '/chat/'
@@ -115,7 +92,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
-  ComunidadRoute: typeof ComunidadRoute
   ApiChatRoute: typeof ApiChatRoute
   ChatThreadIdRoute: typeof ChatThreadIdRoute
   ChatIndexRoute: typeof ChatIndexRoute
@@ -142,13 +118,6 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/comunidad': {
-      id: '/comunidad'
-      path: '/comunidad'
-      fullPath: '/comunidad'
-      preLoaderRoute: typeof ComunidadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
@@ -179,7 +148,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
-  ComunidadRoute: ComunidadRoute,
   ApiChatRoute: ApiChatRoute,
   ChatThreadIdRoute: ChatThreadIdRoute,
   ChatIndexRoute: ChatIndexRoute,
