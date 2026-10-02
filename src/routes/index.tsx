@@ -1023,6 +1023,46 @@ function Dashboard() {
         )}
       </main>
 
+      {/* MODAL EDITAR BANKROLL */}
+      {bankrollModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-md"
+            onClick={() => setBankrollModal(false)}
+          />
+          <div className="surface relative w-full max-w-[400px] p-6">
+            <div className="flex items-center justify-between">
+              <div className="text-lg font-bold">Editar mi bankroll</div>
+              <button
+                aria-label="Cerrar"
+                onClick={() => setBankrollModal(false)}
+                className="grid size-9 place-items-center rounded-full border border-border bg-secondary hover:bg-accent"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+            <label className="mt-4 block text-xs font-semibold text-muted-foreground">
+              Total de fondos (MXN)
+              <input
+                className="field mt-1"
+                type="number"
+                min={0}
+                step="any"
+                value={bankrollInput}
+                onChange={(e) => setBankrollInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveBankroll();
+                }}
+                autoFocus
+              />
+            </label>
+            <button onClick={saveBankroll} className="gold-btn mt-5 h-11 w-full text-[14px]">
+              Guardar
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* MODAL VIP */}
       {showVip && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
