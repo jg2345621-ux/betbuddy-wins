@@ -130,30 +130,6 @@ export type Database = {
         }
         Relationships: []
       }
-      community_messages: {
-        Row: {
-          content: string
-          created_at: string
-          display_name: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          display_name?: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          display_name?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       picks: {
         Row: {
           analysis: string
