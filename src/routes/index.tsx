@@ -470,12 +470,6 @@ function Dashboard() {
           <div className="flex items-center gap-2">
 
             <Link
-              to="/comunidad"
-              className="hidden h-9 items-center gap-1.5 rounded-full border border-border bg-secondary px-3 text-[12px] font-medium sm:flex"
-            >
-              <MessageCircle className="size-4" /> Comunidad
-            </Link>
-            <Link
               to="/chat"
               className="hidden h-9 items-center gap-1.5 rounded-full border border-border bg-secondary px-3 text-[12px] font-medium sm:flex"
             >
@@ -1022,16 +1016,7 @@ function Dashboard() {
 
         {/* CHAT */}
         {tab === "chat" && (
-          <div className="grid gap-4 md:grid-cols-2">
-            <Link to="/comunidad" className="surface flex items-center gap-4 p-6 hover:bg-accent/30">
-              <MessageCircle className="size-8 text-primary" />
-              <div>
-                <div className="font-bold">Sala de la comunidad</div>
-                <div className="text-[13px] text-muted-foreground">
-                  Chat en vivo con todos los apostadores de xsaac.
-                </div>
-              </div>
-            </Link>
+          <div className="grid gap-4">
             <Link to="/chat" className="surface flex items-center gap-4 p-6 hover:bg-accent/30">
               <Bot className="size-8 text-primary" />
               <div>
