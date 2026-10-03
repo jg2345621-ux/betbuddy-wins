@@ -223,6 +223,21 @@ export type Database = {
         }
         Relationships: []
       }
+      suspended_users: {
+        Row: {
+          suspended_at: string
+          user_id: string
+        }
+        Insert: {
+          suspended_at?: string
+          user_id: string
+        }
+        Update: {
+          suspended_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -256,6 +271,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_suspended: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"
