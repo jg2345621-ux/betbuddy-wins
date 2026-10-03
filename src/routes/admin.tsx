@@ -99,6 +99,7 @@ function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [tab, setTab] = useState<"picks" | "users" | "bets">("picks");
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
+  const [suspended, setSuspended] = useState<Set<string>>(new Set());
   const [oldBets, setOldBets] = useState<BetRow[]>([]);
   const [picks, setPicks] = useState<Pick[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -142,16 +143,35 @@ function AdminPage() {
   }, []);
 
   const loadUsers = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const [{ data, error }, { data: susp }] = await Promise.all([
+      supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+      supabase.from("suspended_users").select("user_id"),
+    ]);
     if (error) {
       toast.error("No se pudieron cargar los usuarios");
       return;
     }
     setProfiles((data ?? []) as unknown as ProfileRow[]);
+    setSuspended(new Set((susp ?? []).map((s) => s.user_id)));
   }, []);
+
+  const toggleActive = async (row: ProfileRow) => {
+    const isSusp = suspended.has(row.user_id);
+    const { error } = isSusp
+      ? await supabase.from("suspended_users").delete().eq("user_id", row.user_id)
+      : await supabase.from("suspended_users").insert({ user_id: row.user_id });
+    if (error) {
+      toast.error("No se pudo cambiar el estado");
+      return;
+    }
+    setSuspended((prev) => {
+      const next = new Set(prev);
+      if (isSusp) next.delete(row.user_id);
+      else next.add(row.user_id);
+      return next;
+    });
+    toast.success(isSusp ? "Usuario activado" : "Usuario desactivado");
+  };
 
   const loadOldBets = useCallback(async () => {
     const { data, error } = await supabase
@@ -349,6 +369,7 @@ function AdminPage() {
                   <th className="px-4 py-3">Correo</th>
                   <th className="px-4 py-3">Bankroll</th>
                   <th className="px-4 py-3">Plan</th>
+                  <th className="px-4 py-3">Estado</th>
                 </tr>
               </thead>
               <tbody>
@@ -366,11 +387,24 @@ function AdminPage() {
                         <option value="VIP">VIP</option>
                       </select>
                     </td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => void toggleActive(u)}
+                        className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+                          suspended.has(u.user_id)
+                            ? "bg-destructive/15 text-destructive"
+                            : "bg-primary/15 text-primary"
+                        }`}
+                      >
+                        {suspended.has(u.user_id) ? "Desactivado" : "Activo"}
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {profiles.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    <td colSpan={4} className="px-4 py-10 text-center text-sm text-muted-foreground">
                       Aún no hay usuarios registrados.
                     </td>
                   </tr>
