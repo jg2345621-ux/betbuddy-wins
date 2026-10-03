@@ -73,8 +73,18 @@ function AuthPage() {
           });
     setBusy(false);
     if (res.error) {
+      const m = res.error.message.toLowerCase();
+      const description = m.includes("weak")
+        ? "Esa contraseña es muy común. Usa una más segura (mezcla letras, números y símbolos)."
+        : m.includes("invalid login")
+          ? "Correo o contraseña incorrectos."
+          : m.includes("not confirmed")
+            ? "Confirma tu correo desde el enlace que te enviamos."
+            : m.includes("already registered")
+              ? "Ese correo ya tiene cuenta. Usa Iniciar sesión."
+              : res.error.message;
       toast.error(mode === "in" ? "No se pudo iniciar sesión" : "No se pudo registrar", {
-        description: res.error.message,
+        description,
       });
       return;
     }
