@@ -599,7 +599,7 @@ function Dashboard() {
             [
               { k: "picks", label: "Picks", icon: Zap },
               { k: "bankroll", label: "Mi Bankroll", icon: BarChart3, count: stats.count },
-              { k: "chat", label: "Comunidad", icon: MessageCircle },
+              { k: "chat", label: "Asistente IA", icon: MessageCircle },
             ] as const
           ).map((t) => (
             <button
