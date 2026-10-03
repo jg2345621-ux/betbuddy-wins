@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, Bot, Users } from "lucide-react";
+import { ArrowLeft, Bot } from "lucide-react";
 
-export function ChatNav({ active }: { active: "comunidad" | "ia" }) {
+export function ChatNav({ active }: { active: "ia" }) {
   const base =
     "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors";
   const on = "border-primary bg-primary/15 text-primary";
@@ -15,9 +15,6 @@ export function ChatNav({ active }: { active: "comunidad" | "ia" }) {
         <ArrowLeft className="size-4" /> Panel
       </Link>
       <nav className="flex items-center gap-2">
-        <Link to="/comunidad" className={`${base} ${active === "comunidad" ? on : off}`}>
-          <Users className="size-4" /> Comunidad
-        </Link>
         <Link to="/chat" className={`${base} ${active === "ia" ? on : off}`}>
           <Bot className="size-4" /> Asistente IA
         </Link>
