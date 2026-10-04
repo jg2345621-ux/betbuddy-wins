@@ -728,6 +728,28 @@ function Dashboard() {
               </div>
             )}
 
+            <div className="mb-4 flex items-center justify-between">
+              <button
+                onClick={() => {
+                  setParlayMode((v) => !v);
+                  if (parlayMode) setParlayIds([]);
+                }}
+                className={`flex h-10 items-center gap-2 rounded-full border px-4 text-[13px] font-semibold transition ${
+                  parlayMode
+                    ? "gold-btn border-transparent"
+                    : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+                }`}
+              >
+                <Layers className="size-4" />
+                {parlayMode ? "Cancelar parlay" : "Armar Parlay"}
+              </button>
+              {parlayMode && (
+                <span className="text-[12px] text-muted-foreground">
+                  Toca los picks para combinarlos (mínimo 2)
+                </span>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {picks.map((pick) => {
                 const locked = pick.type === "vip" && !isVip;
