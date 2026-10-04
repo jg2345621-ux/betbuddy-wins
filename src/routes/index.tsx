@@ -916,6 +916,47 @@ function Dashboard() {
                 </div>
               )}
             </div>
+
+            {/* BARRA PARLAY */}
+            {parlayMode && parlayIds.length > 0 && (
+              <div className="surface sticky bottom-4 z-20 mt-6 flex flex-col gap-3 border-primary/40 p-4 shadow-2xl sm:flex-row sm:items-center">
+                <div className="flex items-center gap-2">
+                  <Layers className="size-4 text-primary" />
+                  <span className="text-[13px] font-bold">
+                    Parlay x{parlayIds.length}
+                  </span>
+                  <span className="rounded-full bg-secondary px-2.5 py-1 text-[12px] font-bold text-primary">
+                    Cuota @{parlayOdds}
+                  </span>
+                </div>
+                <div className="flex flex-1 items-center gap-2 sm:justify-end">
+                  <div className="flex items-center gap-1 rounded-xl border border-border bg-secondary px-3 py-2">
+                    <span className="text-[12px] text-muted-foreground">$</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={parlayStake}
+                      onChange={(e) => setParlayStake(e.target.value)}
+                      className="w-20 bg-transparent text-[13px] font-bold outline-none"
+                      aria-label="Monto del parlay"
+                    />
+                  </div>
+                  <div className="text-[12px] text-muted-foreground">
+                    Ganas{" "}
+                    <span className="font-bold text-success">
+                      ${Math.round((Number(parlayStake) || 0) * (parlayOdds - 1))}
+                    </span>
+                  </div>
+                  <button
+                    onClick={addParlay}
+                    disabled={parlayIds.length < 2}
+                    className="gold-btn flex h-10 items-center gap-2 px-4 text-[13px] disabled:opacity-50"
+                  >
+                    <Plus className="size-4" /> Agregar parlay
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
 
