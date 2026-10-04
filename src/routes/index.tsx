@@ -361,6 +361,75 @@ function Dashboard() {
     }
   };
 
+  /* ---------- parlay ---------- */
+  const parlayPicks = useMemo(
+    () => picks.filter((p) => parlayIds.includes(p.id)),
+    [picks, parlayIds],
+  );
+  const parlayOdds = useMemo(
+    () => Number(parlayPicks.reduce((acc, p) => acc * p.odds, 1).toFixed(2)),
+    [parlayPicks],
+  );
+
+  const toggleParlayPick = (pick: Pick) => {
+    if (pick.type === "vip" && !isVip) {
+      setShowVip(true);
+      return;
+    }
+    setParlayIds((prev) =>
+      prev.includes(pick.id) ? prev.filter((id) => id !== pick.id) : [...prev, pick.id],
+    );
+  };
+
+  const addParlay = async () => {
+    if (parlayPicks.length < 2) {
+      toast.info("Selecciona al menos 2 picks para armar tu parlay");
+      return;
+    }
+    if (!userId) {
+      toast.info("Inicia sesión para guardar tus apuestas");
+      return;
+    }
+    const stakeValue = Math.max(1, Math.round(Number(parlayStake) || 0));
+    const event = parlayPicks.map((p) => `${p.match} · ${p.market}`).join(" + ");
+    const label = `PARLAY x${parlayPicks.length}: ${event}`;
+
+    const { data, error } = await supabase
+      .from("bets")
+      .insert({
+        user_id: userId,
+        event: label,
+        odds: parlayOdds,
+        stake: stakeValue,
+        result: "pending",
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (error || !data) {
+      toast.error("No se pudo agregar el parlay", {
+        description: error?.message ?? "La base de datos no devolvió la apuesta.",
+      });
+      return;
+    }
+
+    setBets((prev) => [
+      ...prev,
+      {
+        id: data.id,
+        event: label,
+        odds: parlayOdds,
+        stake: stakeValue,
+        result: "pending",
+        created_at: new Date().toISOString(),
+      },
+    ]);
+    setParlayIds([]);
+    setParlayMode(false);
+    setTab("bankroll");
+    toast.success(`Parlay x${parlayPicks.length} agregado a tu bankroll`);
+  };
+
   const deleteBet = async (id: string) => {
     if (!userId) return;
     if (!window.confirm("¿Eliminar este pick de tu historial?")) return;
