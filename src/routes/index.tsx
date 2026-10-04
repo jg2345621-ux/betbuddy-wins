@@ -10,6 +10,7 @@ import {
   DollarSign,
   Eye,
   Flame,
+  Layers,
   Lock,
   LogIn,
   MessageCircle,
@@ -145,6 +146,9 @@ function Dashboard() {
   const [baseBankroll, setBaseBankroll] = useState(BASE_BANKROLL);
   const [bankrollModal, setBankrollModal] = useState(false);
   const [bankrollInput, setBankrollInput] = useState("");
+  const [parlayMode, setParlayMode] = useState(false);
+  const [parlayIds, setParlayIds] = useState<string[]>([]);
+  const [parlayStake, setParlayStake] = useState("50");
 
 
   const signedIn = Boolean(userId);
@@ -355,6 +359,75 @@ function Dashboard() {
     } catch {
       toast.error("No se pudo actualizar el stake");
     }
+  };
+
+  /* ---------- parlay ---------- */
+  const parlayPicks = useMemo(
+    () => picks.filter((p) => parlayIds.includes(p.id)),
+    [picks, parlayIds],
+  );
+  const parlayOdds = useMemo(
+    () => Number(parlayPicks.reduce((acc, p) => acc * p.odds, 1).toFixed(2)),
+    [parlayPicks],
+  );
+
+  const toggleParlayPick = (pick: Pick) => {
+    if (pick.type === "vip" && !isVip) {
+      setShowVip(true);
+      return;
+    }
+    setParlayIds((prev) =>
+      prev.includes(pick.id) ? prev.filter((id) => id !== pick.id) : [...prev, pick.id],
+    );
+  };
+
+  const addParlay = async () => {
+    if (parlayPicks.length < 2) {
+      toast.info("Selecciona al menos 2 picks para armar tu parlay");
+      return;
+    }
+    if (!userId) {
+      toast.info("Inicia sesión para guardar tus apuestas");
+      return;
+    }
+    const stakeValue = Math.max(1, Math.round(Number(parlayStake) || 0));
+    const event = parlayPicks.map((p) => `${p.match} · ${p.market}`).join(" + ");
+    const label = `PARLAY x${parlayPicks.length}: ${event}`;
+
+    const { data, error } = await supabase
+      .from("bets")
+      .insert({
+        user_id: userId,
+        event: label,
+        odds: parlayOdds,
+        stake: stakeValue,
+        result: "pending",
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (error || !data) {
+      toast.error("No se pudo agregar el parlay", {
+        description: error?.message ?? "La base de datos no devolvió la apuesta.",
+      });
+      return;
+    }
+
+    setBets((prev) => [
+      ...prev,
+      {
+        id: data.id,
+        event: label,
+        odds: parlayOdds,
+        stake: stakeValue,
+        result: "pending",
+        created_at: new Date().toISOString(),
+      },
+    ]);
+    setParlayIds([]);
+    setParlayMode(false);
+    setTab("bankroll");
+    toast.success(`Parlay x${parlayPicks.length} agregado a tu bankroll`);
   };
 
   const deleteBet = async (id: string) => {
@@ -655,6 +728,28 @@ function Dashboard() {
               </div>
             )}
 
+            <div className="mb-4 flex items-center justify-between">
+              <button
+                onClick={() => {
+                  setParlayMode((v) => !v);
+                  if (parlayMode) setParlayIds([]);
+                }}
+                className={`flex h-10 items-center gap-2 rounded-full border px-4 text-[13px] font-semibold transition ${
+                  parlayMode
+                    ? "gold-btn border-transparent"
+                    : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+                }`}
+              >
+                <Layers className="size-4" />
+                {parlayMode ? "Cancelar parlay" : "Armar Parlay"}
+              </button>
+              {parlayMode && (
+                <span className="text-[12px] text-muted-foreground">
+                  Toca los picks para combinarlos (mínimo 2)
+                </span>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {picks.map((pick) => {
                 const locked = pick.type === "vip" && !isVip;
@@ -729,12 +824,39 @@ function Dashboard() {
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => addToBankroll(pick)}
-                        className="gold-btn mt-4 flex h-11 w-full items-center justify-center gap-2 text-[13px]"
-                      >
-                        <Plus className="size-4" /> Agregar a mi bankroll
-                      </button>
+                      {parlayMode ? (
+                        <button
+                          onClick={() => toggleParlayPick(pick)}
+                          className={`mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl border text-[13px] font-semibold transition ${
+                            parlayIds.includes(pick.id)
+                              ? "gold-btn border-transparent"
+                              : locked
+                                ? "border-border bg-secondary text-muted-foreground"
+                                : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+                          }`}
+                        >
+                          {parlayIds.includes(pick.id) ? (
+                            <>
+                              <Check className="size-4" /> En el parlay
+                            </>
+                          ) : locked ? (
+                            <>
+                              <Lock className="size-4" /> Pick VIP bloqueado
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="size-4" /> Agregar al parlay
+                            </>
+                          )}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => addToBankroll(pick)}
+                          className="gold-btn mt-4 flex h-11 w-full items-center justify-center gap-2 text-[13px]"
+                        >
+                          <Plus className="size-4" /> Agregar a mi bankroll
+                        </button>
+                      )}
 
                       {isAdmin && (
                         <div className="mt-2 flex gap-2">
@@ -794,6 +916,47 @@ function Dashboard() {
                 </div>
               )}
             </div>
+
+            {/* BARRA PARLAY */}
+            {parlayMode && parlayIds.length > 0 && (
+              <div className="surface sticky bottom-4 z-20 mt-6 flex flex-col gap-3 border-primary/40 p-4 shadow-2xl sm:flex-row sm:items-center">
+                <div className="flex items-center gap-2">
+                  <Layers className="size-4 text-primary" />
+                  <span className="text-[13px] font-bold">
+                    Parlay x{parlayIds.length}
+                  </span>
+                  <span className="rounded-full bg-secondary px-2.5 py-1 text-[12px] font-bold text-primary">
+                    Cuota @{parlayOdds}
+                  </span>
+                </div>
+                <div className="flex flex-1 items-center gap-2 sm:justify-end">
+                  <div className="flex items-center gap-1 rounded-xl border border-border bg-secondary px-3 py-2">
+                    <span className="text-[12px] text-muted-foreground">$</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={parlayStake}
+                      onChange={(e) => setParlayStake(e.target.value)}
+                      className="w-20 bg-transparent text-[13px] font-bold outline-none"
+                      aria-label="Monto del parlay"
+                    />
+                  </div>
+                  <div className="text-[12px] text-muted-foreground">
+                    Ganas{" "}
+                    <span className="font-bold text-success">
+                      ${Math.round((Number(parlayStake) || 0) * (parlayOdds - 1))}
+                    </span>
+                  </div>
+                  <button
+                    onClick={addParlay}
+                    disabled={parlayIds.length < 2}
+                    className="gold-btn flex h-10 items-center gap-2 px-4 text-[13px] disabled:opacity-50"
+                  >
+                    <Plus className="size-4" /> Agregar parlay
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
 
