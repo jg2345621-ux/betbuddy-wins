@@ -10,6 +10,7 @@ import {
   DollarSign,
   Eye,
   Flame,
+  Layers,
   Lock,
   LogIn,
   MessageCircle,
@@ -145,6 +146,9 @@ function Dashboard() {
   const [baseBankroll, setBaseBankroll] = useState(BASE_BANKROLL);
   const [bankrollModal, setBankrollModal] = useState(false);
   const [bankrollInput, setBankrollInput] = useState("");
+  const [parlayMode, setParlayMode] = useState(false);
+  const [parlayIds, setParlayIds] = useState<string[]>([]);
+  const [parlayStake, setParlayStake] = useState("50");
 
 
   const signedIn = Boolean(userId);
