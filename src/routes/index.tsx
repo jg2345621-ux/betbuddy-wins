@@ -824,12 +824,39 @@ function Dashboard() {
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => addToBankroll(pick)}
-                        className="gold-btn mt-4 flex h-11 w-full items-center justify-center gap-2 text-[13px]"
-                      >
-                        <Plus className="size-4" /> Agregar a mi bankroll
-                      </button>
+                      {parlayMode ? (
+                        <button
+                          onClick={() => toggleParlayPick(pick)}
+                          className={`mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl border text-[13px] font-semibold transition ${
+                            parlayIds.includes(pick.id)
+                              ? "gold-btn border-transparent"
+                              : locked
+                                ? "border-border bg-secondary text-muted-foreground"
+                                : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+                          }`}
+                        >
+                          {parlayIds.includes(pick.id) ? (
+                            <>
+                              <Check className="size-4" /> En el parlay
+                            </>
+                          ) : locked ? (
+                            <>
+                              <Lock className="size-4" /> Pick VIP bloqueado
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="size-4" /> Agregar al parlay
+                            </>
+                          )}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => addToBankroll(pick)}
+                          className="gold-btn mt-4 flex h-11 w-full items-center justify-center gap-2 text-[13px]"
+                        >
+                          <Plus className="size-4" /> Agregar a mi bankroll
+                        </button>
+                      )}
 
                       {isAdmin && (
                         <div className="mt-2 flex gap-2">
