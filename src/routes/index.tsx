@@ -626,7 +626,7 @@ function Dashboard() {
               </span>
               <Activity className="size-4 text-muted-foreground" />
             </div>
-            <VipBlur locked={!isVip} onUnlock={() => setVipOpen(true)}>
+            <VipBlur locked={!isVip} onUnlock={requestVip}>
             <div
               className={`mt-2 text-[22px] font-bold tracking-tight ${stats.totalProfit >= 0 ? "text-success" : "text-destructive"}`}
             >
@@ -646,7 +646,7 @@ function Dashboard() {
               </span>
               <Target className="size-4 text-muted-foreground" />
             </div>
-            <VipBlur locked={!isVip} onUnlock={() => setVipOpen(true)}>
+            <VipBlur locked={!isVip} onUnlock={requestVip}>
             <div className="mt-2 text-[22px] font-bold tracking-tight">{stats.winRate}%</div>
             <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
               <div className="h-full bg-success" style={{ width: `${stats.winRate}%` }} />
@@ -660,7 +660,7 @@ function Dashboard() {
               </span>
               <BarChart3 className="size-4 text-muted-foreground" />
             </div>
-            <VipBlur locked={!isVip} onUnlock={() => setVipOpen(true)}>
+            <VipBlur locked={!isVip} onUnlock={requestVip}>
             <div className="mt-2 text-[22px] font-bold tracking-tight text-primary">
               {stats.roi > 0 ? "+" : ""}
               {stats.roi}%
@@ -1119,7 +1119,7 @@ function Dashboard() {
                 <div className="mt-1 text-[12px] text-muted-foreground">
                   Curva acumulada calculada con tus apuestas reales
                 </div>
-                <VipBlur locked={!isVip} onUnlock={() => setVipOpen(true)}>
+                <VipBlur locked={!isVip} onUnlock={requestVip}>
                 <div className="mt-4 h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
