@@ -17,7 +17,8 @@ import {
   PromptInputSubmit,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
-import { ChatNav, SignInPrompt } from "@/components/chat-nav";
+import { supabase } from "@/integrations/supabase/client";
+import { ChatNav, SignInPrompt, VipOnlyPrompt } from "@/components/chat-nav";
 import {
   deleteThread,
   loadThreadMessages,
@@ -25,6 +26,7 @@ import {
   renameThread,
   saveThreadMessage,
   useSession,
+  useIsVip,
 } from "@/lib/chat-data";
 
 export const Route = createFileRoute("/chat/$threadId")({
@@ -51,6 +53,7 @@ export const Route = createFileRoute("/chat/$threadId")({
 function ThreadPage() {
   const { threadId } = Route.useParams();
   const { userId, ready } = useSession();
+  const isVip = useIsVip(userId);
   const [initial, setInitial] = useState<UIMessage[] | null>(null);
 
   useEffect(() => {
@@ -69,7 +72,9 @@ function ThreadPage() {
       <ChatNav active="ia" />
       {ready && !userId ? (
         <SignInPrompt text="Inicia sesión para chatear con el asistente." />
-      ) : initial === null ? (
+      ) : isVip === false ? (
+        <VipOnlyPrompt />
+      ) : initial === null || isVip === null ? (
         <div className="mt-10 flex justify-center">
           <Loader2 className="size-5 animate-spin text-primary" />
         </div>
@@ -90,7 +95,14 @@ function ChatWindow({
   initial: UIMessage[];
 }) {
   const navigate = useNavigate();
-  const transport = useMemo(() => new DefaultChatTransport({ api: "/api/chat" }), []);
+  const transport = useMemo(() => new DefaultChatTransport({
+        api: "/api/chat",
+        headers: async (): Promise<Record<string, string>> => {
+          const { data } = await supabase.auth.getSession();
+          const t = data.session?.access_token;
+          return t ? { Authorization: `Bearer ${t}` } : {};
+        },
+      }), []);
   const { messages, sendMessage, status } = useChat({
     id: threadId,
     messages: initial,

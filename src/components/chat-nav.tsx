@@ -36,3 +36,15 @@ export function SignInPrompt({ text }: { text: string }) {
     </div>
   );
 }
+
+export function VipOnlyPrompt() {
+  return (
+    <div className="surface mt-8 p-8 text-center">
+      <p className="font-semibold">El Asistente IA es exclusivo para miembros VIP.</p>
+      <p className="mt-1 text-sm text-muted-foreground">Contacta a xsaac para activar tu VIP.</p>
+      <Link to="/" className="gold-btn mt-4 inline-block px-4 py-2 text-sm font-semibold">
+        Volver al panel
+      </Link>
+    </div>
+  );
+}

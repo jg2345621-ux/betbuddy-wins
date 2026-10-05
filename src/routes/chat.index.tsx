@@ -2,8 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Bot, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { ChatNav, SignInPrompt } from "@/components/chat-nav";
-import { createThread, listThreads, useSession, type Thread } from "@/lib/chat-data";
+import { ChatNav, SignInPrompt, VipOnlyPrompt } from "@/components/chat-nav";
+import { createThread, listThreads, useSession, useIsVip, type Thread } from "@/lib/chat-data";
 
 export const Route = createFileRoute("/chat/")({
   head: () => ({
@@ -28,6 +28,7 @@ export const Route = createFileRoute("/chat/")({
 
 function ChatHome() {
   const { userId, ready } = useSession();
+  const isVip = useIsVip(userId);
   const navigate = useNavigate();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +70,8 @@ function ChatHome() {
 
       {ready && !userId ? (
         <SignInPrompt text="Inicia sesión para guardar tus conversaciones con el asistente." />
+      ) : isVip === false ? (
+        <VipOnlyPrompt />
       ) : (
         <section className="surface mt-6 p-5">
           <button

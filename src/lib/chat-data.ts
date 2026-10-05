@@ -101,3 +101,22 @@ export function messageText(message: UIMessage) {
     .join("")
     .trim();
 }
+
+export function useIsVip(userId: string | null) {
+  const [isVip, setIsVip] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!userId) {
+      setIsVip(null);
+      return;
+    }
+    supabase
+      .from("profiles")
+      .select("is_vip, subscription_status")
+      .eq("user_id", userId)
+      .maybeSingle()
+      .then(({ data }) =>
+        setIsVip(data?.is_vip === true || String(data?.subscription_status).toUpperCase() === "VIP"),
+      );
+  }, [userId]);
+  return isVip;
+}
